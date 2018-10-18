@@ -10,6 +10,12 @@ public class AbstractMaze : MonoBehaviour {
     public Renderer topright;
     public Renderer topleft;
     public Renderer bottomright;
+    [HideInInspector]
+    public float mapWidth;
+    [HideInInspector]
+    public float mapHeight;
+    [HideInInspector]
+    public Vector3 mapTopLeft;
 
 
     //list of clusters for every level of abstraction 
@@ -21,13 +27,15 @@ public class AbstractMaze : MonoBehaviour {
     private void Start()
     {
         Vector2 dimensions = GetSizeOfMap();
-        InitAbstractMaze(dimensions.x, dimensions.y, 2); 
+        mapWidth = dimensions.x;
+        mapHeight = dimensions.y;
+        InitAbstractMaze(dimensions.x, dimensions.y, 5);
     }
 
 
 
 
-    /* Determine the entire size of the map.
+    /* Determine the entire size of the map using the corners of the map
      * Output: the width and the height of the map, stored in a Vector2
      */
     private Vector2 GetSizeOfMap()
@@ -42,6 +50,8 @@ public class AbstractMaze : MonoBehaviour {
         //use the world coordinates to get the width and the height
         float approxWidth = Mathf.Round(Mathf.Abs(approxLeft - approxRight));
         float approxHeight = Mathf.Round(Mathf.Abs(approxTop - approxBottom));
+
+        mapTopLeft = new Vector3(approxLeft, topleft.bounds.center.y, approxTop);
 
         return new Vector2(approxWidth, approxHeight);
 
@@ -79,11 +89,23 @@ public class AbstractMaze : MonoBehaviour {
         //Build the lowest level of clusters: the 1-clusters
         if (level == 1)
         {
+            Vector3 worldTopLeft = mapTopLeft;
 
+            for (int i = 0; i < (mapWidth / clusterWidth); i++)
+            {
+                //iterate through the entire map to fill it with clusters
+                for (int j = 0; j < (mapHeight / clusterHeight); j++)
+                {
+                    Vector3 position = new Vector3(worldTopLeft.x + (clusterWidth * j), worldTopLeft.y, worldTopLeft.z - (clusterHeight * i));
+                    Cluster cluster = new Cluster(clusterWidth, clusterHeight, position, level);
+                    clusters.Add(cluster);
+                    //Debug.Log("cluster added at:" + position);
+                }
+            }
         }
-
 
         return clusters; 
     }
+
 
 }
