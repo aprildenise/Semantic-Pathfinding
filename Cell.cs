@@ -9,20 +9,22 @@ public class Cell {
     public int zoneId; //the zone that the cell belongs to
     public bool isWalkable; //is the cell walkable
     public Vector3 worldPosition; //position of the cell in world coordinates
+    public float cellSize; //size of the cell in world coordinates
 
     public List<Edge> edgesToNeighbors;
 
     //optional
     public int gridPositionX; //position of the cell in the 2d grid
-    public int gridPositionY;
+    public int gridPositionZ;
     public bool threshold; //temp
 
     //constructor
-    public Cell(Vector3 worldpos, int gridx, int gridy)
+    public Cell(Vector3 worldpos, int gridx, int gridz, float size)
     {
         worldPosition = worldpos;
         gridPositionX = gridx;
-        gridPositionY = gridy;
+        gridPositionZ = gridz;
+        cellSize = size;
         CheckIfWalkable();
     }
 
@@ -33,7 +35,9 @@ public class Cell {
     public void CheckIfWalkable()
     {
         NavMeshHit hit;
-        if (NavMesh.SamplePosition(worldPosition, out hit, 2.5f, NavMesh.AllAreas))
+        Vector3 increment = new Vector3(cellSize / 2f, 0, -1f * cellSize / 2f);
+        Vector3 center = worldPosition + increment;
+        if (NavMesh.SamplePosition(center, out hit, cellSize/2, NavMesh.AllAreas))
         {
             //this cell is walkable
             isWalkable = true;
