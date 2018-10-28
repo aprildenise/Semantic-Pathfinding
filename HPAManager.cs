@@ -14,8 +14,9 @@ public class HPAManager : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
         m.GetMapDimensions();
-        m.BuildCellGrid(.25f);
+        m.BuildCellGrid(.1f);
         m.DefineZones();
+        m.FindThresholds();
 
 	}
 

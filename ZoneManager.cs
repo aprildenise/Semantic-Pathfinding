@@ -6,7 +6,7 @@ public class ZoneManager : MonoBehaviour {
 
 
     public List<GameObject> zonesObjects = new List<GameObject>(6);
-
+    public List<Zone> zones;
 
     /* Find the dimensions of each zone in the zones list
      */
@@ -20,6 +20,7 @@ public class ZoneManager : MonoBehaviour {
             zones.Add(zone);
             num++;
         }
+        this.zones = zones;
         return zones;
 
     }

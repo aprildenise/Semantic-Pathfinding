@@ -131,17 +131,25 @@ public class Map : MonoBehaviour {
             Cell bottomLeftCell = CellFromWorldPos(z.bottomLeft);
             //Cell bottomRightCell = CellFromWorldPos(z.bottomRight);
 
+            /*
+            Debug.Log("topleft: " + topLeftCell.worldPosition);
+            Debug.Log("topright " + topRightCell.worldPosition);
+            Debug.Log("bottomleft: " + bottomLeftCell.worldPosition); 
+            */
+
             //mark the cells between the above bounds as belonging to this zone
             int id = z.zoneId;
+            //Debug.Log(id);
             for (int i = topLeftCell.gridPositionZ; i <= bottomLeftCell.gridPositionZ; i++)
             {
                 for (int j = topLeftCell.gridPositionX; j <= topRightCell.gridPositionX; j++)
                 {
+                    
                     grid[i, j].zoneId = id;
                 }
             }
 
-            break;
+            //break;
         }
     }
 
@@ -149,51 +157,146 @@ public class Map : MonoBehaviour {
 
     /* Within each zone, find the thresholds that connect two different zones together
      * NOTE: this will only MARK cells as thresholds for the moment
-     * ALSO NOTE: implementation is not optimal at the moment
      */
     public void FindThresholds()
     {
-        //randomly pick a cell to start with
-        bool validStart = false;
-        Cell startCell;
-        do
-        {
-            int randX = Random.Range(0, gridWidth - 1);
-            int randZ = Random.Range(0, gridHeight - 1);
-            startCell = grid[randX, randZ];
-            if (startCell.isWalkable)
-            {
-                validStart = true;
-            }
-        } while (!validStart);
 
-        bool[,] visited = new bool[mapWidth, mapHeight];
-        FindThresholdsSearch(visited, startCell);
+        //table to see if we have visited a cell
+        bool[,] visited = new bool[gridHeight, gridWidth];
+
+        //get a zone
+        foreach (Zone z in zm.zones)
+        {
+            //get the bounds of the zone, in terms of the grid coordinates/indeces
+            Cell topLeftCell = CellFromWorldPos(z.topLeft);
+            Cell topRightCell = CellFromWorldPos(z.topRight);
+            Cell bottomLeftCell = CellFromWorldPos(z.bottomLeft);
+
+            int topBound = topLeftCell.gridPositionZ;
+            int bottomBound = bottomLeftCell.gridPositionZ;
+            int leftBound = topLeftCell.gridPositionX;
+            int rightBound = topRightCell.gridPositionX;
+
+            //randomly pick a cell to start with, which is within the zone
+            bool validStart = false;
+            Cell startCell;
+            do
+            {
+                int randX = Random.Range(leftBound, rightBound + 1);
+                int randZ = Random.Range(bottomBound, topBound + 1);
+                startCell = grid[randZ, randX];
+                if (startCell.isWalkable)
+                {
+                    validStart = true;
+                }
+            } while (!validStart);
+
+            //Debug.Log("visited length:" + visited.GetLength(0) + ", " + visited.GetLength(1));
+
+            FindThresholdsSearchI(visited, startCell, topBound, bottomBound, leftBound, rightBound);
+        }
 
     }
 
 
     /* The recursive floodfill function used to search through the 2d grid
      * for thresholds
-     */
-    public void FindThresholdsSearch(bool[,] visited, Cell c)
+    
+    public void FindThresholdsSearch(bool[,] visited, Cell c, int topBound, int bottomBound, int leftBound, int rightBound)
     {
         int x = c.gridPositionX;
         int z = c.gridPositionZ;
-        visited[z,x] = true;
 
-        foreach(Edge edge in c.edgesToNeighbors)
+
+        //check if this cell is within the zone that we are searching through
+        if ( !(x >= leftBound && x <= rightBound) || !(z <= bottomBound && z >= topBound))
         {
-            Cell adjacent = edge.incident;
-            if (!visited[adjacent.gridPositionX, adjacent.gridPositionZ] && adjacent.isWalkable && adjacent.zoneId != c.zoneId)
-            {
-                //this is a valid threshold
-                adjacent.threshold = true;
-            }
-            //continue to recurse through its neighbors
-            FindThresholdsSearch(visited, adjacent);
+            //Debug.Log("trigger");
+            return;
         }
 
+        //check if we haven't gone beyond the matrix
+        if (x < 0 || z < 0 || x > gridWidth - 1 || z > gridHeight - 1)
+        {
+            return;
+        }
+
+        //check if this cell was already visited or it is not walkable
+        if (!c.isWalkable || visited[z,x])
+        {
+            return;
+        }
+
+        Debug.Log("current cell: " + c.worldPosition);
+        visited[z,x] = true;
+        foreach(Edge edge in c.edgesToNeighbors)
+        {
+            Debug.Log("current neighbor is at: " + edge.incident.worldPosition);
+
+            Cell adjacent = edge.incident;
+            if (!visited[adjacent.gridPositionZ, adjacent.gridPositionX] && adjacent.isWalkable && adjacent.zoneId != c.zoneId)
+            {
+                //this is a valid threshold
+                Debug.Log("threshold has been found");
+                adjacent.threshold = true;
+                
+            }
+            //continue to recurse through its neighbors
+            FindThresholdsSearch(visited, adjacent, topBound, bottomBound, leftBound, rightBound);
+        }
+
+    }
+    */
+
+
+    /* The iterative floodfill used to search through the grid for thresholds
+     */
+    public void FindThresholdsSearchI(bool[,] visited, Cell c, int topBound, int bottomBound, int leftBound, int rightBound)
+    {
+        Stack<Cell> s = new Stack<Cell>();
+        s.Push(c);
+        while (s.Count > 0)
+        {
+            Cell cell = s.Pop();
+            int x = cell.gridPositionX;
+            int z = cell.gridPositionZ;
+            //check if this cell is within the zone that we are searching through
+            if (!(x >= leftBound && x <= rightBound) || !(z <= bottomBound && z >= topBound))
+            {
+                //Debug.Log("trigger 1");
+                continue;
+            }
+
+            //check if we haven't gone beyond the matrix
+            if (x < 0 || z < 0 || x > gridWidth - 1 || z > gridHeight - 1)
+            {
+                //Debug.Log("trigger2");
+                continue;
+            }
+
+            //check if this cell was already visited or it is not walkable
+            if (!cell.isWalkable || visited[z, x])
+            {
+                //Debug.Log("trgger3");
+                continue;
+            }
+            //Debug.Log("searching...");
+            //Debug.Log("current cell: " + cell.worldPosition);
+            if (!visited[cell.gridPositionZ, cell.gridPositionX])
+            {
+                visited[cell.gridPositionZ, cell.gridPositionX] = true;
+                if (c.zoneId != cell.zoneId)
+                {
+                    cell.threshold = true;
+                    //Debug.Log("threshold found");
+                }
+            }
+
+            foreach (Edge e in cell.edgesToNeighbors)
+            {
+                s.Push(e.incident);
+            }
+        }
     }
 
 
@@ -201,11 +304,11 @@ public class Map : MonoBehaviour {
      */
     public Cell CellFromWorldPos(Vector3 worldPos) {
 
-        Debug.Log("worldpos: " + worldPos);
+        //Debug.Log("worldpos: " + worldPos);
 
         //find hwo far along the world position the cell is on the grid
         //float percentX = Mathf.Abs((worldPos.x + (float)mapWidth / 2f) / (float)mapWidth);
-        float percentZ = Mathf.Abs((worldPos.z - (float)mapHeight / 2f) / (float)mapHeight);
+        //float percentZ = Mathf.Abs((worldPos.z - (float)mapHeight / 2f) / (float)mapHeight);
 
         float approxLeft = (topLeft.bounds.center.x - (topLeft.bounds.size.x / 2));
         float approxRight = (topRight.bounds.center.x + (topRight.bounds.size.x / 2));
@@ -213,24 +316,41 @@ public class Map : MonoBehaviour {
         float posDistance = Mathf.Sqrt((worldPos.x - approxLeft) * (worldPos.x - approxLeft));
         float percentX = posDistance / worldDistance;
 
+        float approxBottom = (bottomRight.bounds.center.z - (bottomRight.bounds.size.z / 2));
+        float approxTop = (topLeft.bounds.center.z + (topLeft.bounds.size.z / 2));
+        worldDistance = Mathf.Abs(approxTop - approxBottom);
+        posDistance = Mathf.Abs(worldPos.z - approxTop);
+        float percentZ = posDistance / worldDistance;
+
         //make sure the percent does not go beyond 100%
         percentX = Mathf.Clamp01(percentX);
         percentZ = Mathf.Clamp01(percentZ);
 
-
+        /*
         Debug.Log("somecomputation: " + ((worldPos.x + (float)mapWidth / 2f) / (float)mapWidth));
         Debug.Log("precentx" + percentX);
         Debug.Log("percentz" + percentZ);
+        */
+        
         
 
         //find the indeces of the cell in the grid using the world position
-        int x = Mathf.RoundToInt((gridWidth - 1) * percentX);
-        int z = Mathf.RoundToInt((gridHeight - 1) * percentZ);
+        int x = (Mathf.RoundToInt(gridWidth * percentX)) - 1;
+        int z = (Mathf.RoundToInt(gridHeight * percentZ)) - 1;
 
-        
+        if (x < 0)
+        {
+            x = 0;
+        }
+        if (z < 0)
+        {
+            z = 0;
+        }
+
+        /*
         Debug.Log("x " + x);
         Debug.Log("z " + z);
-        
+        */
 
         return grid[z,x];
     }
@@ -253,6 +373,9 @@ public class Map : MonoBehaviour {
                 for (int j = 0; j < gridHeight; j++)
                 {
                     Cell c = grid[j,i];
+
+                    //uncomment to see thresholds and iswalkables
+                    
                     if (c.isWalkable && c.threshold)
                     {
                         Gizmos.color = Color.blue;
@@ -261,13 +384,51 @@ public class Map : MonoBehaviour {
                     {
                         Gizmos.color = Color.white;
                     }
-                    else
+                    else if (!c.isWalkable)
                     {
                         Gizmos.color = Color.red;
                     }
+                    
+
+                    //uncomment to see the zones
+                    /*
                     if (c.zoneId == 0) {
+                        Gizmos.color = Color.red;
+                    }
+                    else if (c.zoneId == 1)
+                    {
+                        Gizmos.color = Color.yellow;
+                    }
+                    else if (c.zoneId == 2)
+                    {
                         Gizmos.color = Color.green;
                     }
+                    else if (c.zoneId == 3)
+                    {
+                        Gizmos.color = Color.blue;
+                    }
+                    else if (c.zoneId == 4)
+                    {
+                        Gizmos.color = Color.cyan;
+                    }
+                    else if (c.zoneId == 5)
+                    {
+                        Gizmos.color = Color.gray;
+                    }
+                    else if (c.zoneId == 6)
+                    {
+                        Gizmos.color = Color.magenta;
+                    }
+                    else if (c.zoneId == 7)
+                    {
+                        Gizmos.color = Color.white;
+                    }
+                    else
+                    {
+                        Gizmos.color = Color.clear;
+                    }
+                    */
+
 
                     Vector3 increment = new Vector3(c.cellSize / 2f, 0, -1f * c.cellSize / 2f);
                     Vector3 center = c.worldPosition + increment;
