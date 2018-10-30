@@ -432,7 +432,7 @@ public class Map : MonoBehaviour {
 
                     Vector3 increment = new Vector3(c.cellSize / 2f, 0, -1f * c.cellSize / 2f);
                     Vector3 center = c.worldPosition + increment;
-                    Gizmos.DrawCube(center, new Vector3(1, 1, 1));
+                    Gizmos.DrawCube(center, new Vector3(c.cellSize, c.cellSize, c.cellSize));
                 }
             }
         }
