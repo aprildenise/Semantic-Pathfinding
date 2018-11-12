@@ -2,7 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Map : MonoBehaviour {
+public class Map : MonoBehaviour
+{
 
     //delete this comment
 
@@ -63,17 +64,17 @@ public class Map : MonoBehaviour {
         grid = new Cell[numZCells, numXCells];
         for (int z = 0; z < numZCells; z++)
         {
-            for(int x = 0; x < numXCells; x++)
+            for (int x = 0; x < numXCells; x++)
             {
                 //get the positon of this cell we want to init
-                Vector3 increment = new Vector3((cellSize * x) + (cellSize/2f), 0, -1 * ((cellSize*z) + (cellSize/2f)));
+                Vector3 increment = new Vector3((cellSize * x) + (cellSize / 2f), 0, -1 * ((cellSize * z) + (cellSize / 2f)));
                 //Vector3 worldPos = topLeftPos + (Vector3.right * (x * (cellSize + (cellSize / 2)))) + (Vector3.forward * (z * (cellSize + (cellSize / 2))));
                 Vector3 worldPos = topLeftPos + increment;
-                grid[z,x] = new Cell(worldPos, x, z, cellSize);
+                grid[z, x] = new Cell(worldPos, x, z, cellSize);
             }
         }
 
-        
+
         //build all possible edges and neighbors for each cell
         for (int z = 0; z < numZCells; z++)
         {
@@ -113,7 +114,7 @@ public class Map : MonoBehaviour {
                 c.AssignNeighbors(possibleEdges);
             }
         }
-        
+
     }
 
 
@@ -123,7 +124,7 @@ public class Map : MonoBehaviour {
     public void DefineZones()
     {
         List<Zone> zones = zm.FindZoneBounds();
-        foreach(Zone z in zones)
+        foreach (Zone z in zones)
         {
 
 
@@ -142,11 +143,11 @@ public class Map : MonoBehaviour {
             //mark the cells between the above bounds as belonging to this zone
             int id = z.zoneId;
             //Debug.Log(id);
-            for (int i = topLeftCell.gridPositionZ; i <= bottomLeftCell.gridPositionZ; i++)
+            for (int i = topLeftCell.gridPositionZ; i < bottomLeftCell.gridPositionZ; i++)
             {
-                for (int j = topLeftCell.gridPositionX; j <= topRightCell.gridPositionX; j++)
+                for (int j = topLeftCell.gridPositionX; j < topRightCell.gridPositionX; j++)
                 {
-                        grid[i, j].zoneId = id;
+                    grid[i, j].zoneId = id;
                 }
             }
 
@@ -173,8 +174,8 @@ public class Map : MonoBehaviour {
         Cell startCell;
         do
         {
-            int randX = Random.Range(leftBound, rightBound + 1);
-            int randZ = Random.Range(bottomBound, topBound + 1);
+            int randX = Random.Range(leftBound, rightBound);
+            int randZ = Random.Range(bottomBound, topBound);
             startCell = grid[randZ, randX];
             if (startCell.isWalkable)
             {
@@ -187,16 +188,13 @@ public class Map : MonoBehaviour {
         foreach (Zone z in zm.zones)
         {
             //get the bounds of the zone, in terms of the grid coordinates/indeces
-
             Cell topLeftCell = CellFromWorldPos(z.topLeft);
             Cell topRightCell = CellFromWorldPos(z.topRight);
             Cell bottomLeftCell = CellFromWorldPos(z.bottomLeft);
-
             int topBound = topLeftCell.gridPositionZ;
             int bottomBound = bottomLeftCell.gridPositionZ;
             int leftBound = topLeftCell.gridPositionX;
             int rightBound = topRightCell.gridPositionX;
-
             //randomly pick a cell to start with, which is within the zone
             bool validStart = false;
             Cell startCell;
@@ -210,10 +208,8 @@ public class Map : MonoBehaviour {
                     validStart = true;
                 }
             } while (!validStart);
-
             //Debug.Log("visited length:" + visited.GetLength(0) + ", " + visited.GetLength(1));
             
-
             
             //FindThresholdsSearchI(visited, startCell, topBound, bottomBound, leftBound, rightBound);
         }
@@ -221,11 +217,6 @@ public class Map : MonoBehaviour {
         FindThresholdSearchAlt(visited, startCell);
 
     }
-
-
-
-
-
 
 
     /* The recursive floodfill function used to search through the 2d grid
@@ -280,58 +271,58 @@ public class Map : MonoBehaviour {
 
     /* The iterative floodfill used to search through the grid for thresholds
      */
-     /*
-    public void FindThresholdsSearchI(bool[,] visited, Cell c, int topBound, int bottomBound, int leftBound, int rightBound)
-    {
-        Stack<Cell> s = new Stack<Cell>();
-        s.Push(c);
-        while (s.Count > 0)
-        {
-            Cell cell = s.Pop();
-            int x = cell.gridPositionX;
-            int z = cell.gridPositionZ;
-            //check if this cell is within the zone that we are searching through
-            if (!(x >= leftBound && x <= rightBound) || !(z <= bottomBound && z >= topBound))
-            {
-                //Debug.Log("trigger 1");
-                continue;
-            }
+    /*
+   public void FindThresholdsSearchI(bool[,] visited, Cell c, int topBound, int bottomBound, int leftBound, int rightBound)
+   {
+       Stack<Cell> s = new Stack<Cell>();
+       s.Push(c);
+       while (s.Count > 0)
+       {
+           Cell cell = s.Pop();
+           int x = cell.gridPositionX;
+           int z = cell.gridPositionZ;
+           //check if this cell is within the zone that we are searching through
+           if (!(x >= leftBound && x <= rightBound) || !(z <= bottomBound && z >= topBound))
+           {
+               //Debug.Log("trigger 1");
+               continue;
+           }
 
-            //check if we haven't gone beyond the matrix
-            if (x < 0 || z < 0 || x > gridWidth - 1 || z > gridHeight - 1)
-            {
-                //Debug.Log("trigger2");
-                continue;
-            }
+           //check if we haven't gone beyond the matrix
+           if (x < 0 || z < 0 || x > gridWidth - 1 || z > gridHeight - 1)
+           {
+               //Debug.Log("trigger2");
+               continue;
+           }
 
-            //check if this cell was already visited or it is not walkable
-            if (!cell.isWalkable || visited[z, x])
-            {
-                //Debug.Log("trgger3");
-                continue;
-            }
-            //Debug.Log("searching...");
-            //Debug.Log("current cell: " + cell.worldPosition);
-            if (!visited[cell.gridPositionZ, cell.gridPositionX])
-            {
-                visited[cell.gridPositionZ, cell.gridPositionX] = true;
-                if (c.zoneId != cell.zoneId)
-                {
-                    cell.threshold = true;
-                    //Debug.Log("threshold found");
-                }
-            }
+           //check if this cell was already visited or it is not walkable
+           if (!cell.isWalkable || visited[z, x])
+           {
+               //Debug.Log("trgger3");
+               continue;
+           }
+           //Debug.Log("searching...");
+           //Debug.Log("current cell: " + cell.worldPosition);
+           if (!visited[cell.gridPositionZ, cell.gridPositionX])
+           {
+               visited[cell.gridPositionZ, cell.gridPositionX] = true;
+               if (c.zoneId != cell.zoneId)
+               {
+                   cell.threshold = true;
+                   //Debug.Log("threshold found");
+               }
+           }
 
-            foreach (Edge e in cell.edgesToNeighbors)
-            {
-                s.Push(e.incident);
-            }
-        }
-    }
-    */
+           foreach (Edge e in cell.edgesToNeighbors)
+           {
+               s.Push(e.incident);
+           }
+       }
+   }
+   */
 
 
-    
+
     public void FindThresholdSearchAlt(bool[,] visited, Cell start)
     {
         Queue<Cell> s = new Queue<Cell>();
@@ -340,28 +331,190 @@ public class Map : MonoBehaviour {
         s.Enqueue(start);
 
 
-        
+
         while (s.Count != 0)
         {
 
             Cell cell = s.Dequeue();
+
             int x = cell.gridPositionX;
             int z = cell.gridPositionZ;
-            
+
+            if (visited[z,x])
+            {
+                continue;
+            }
+
             visited[cell.gridPositionZ, cell.gridPositionX] = true;
-            foreach(Edge e in cell.edgesToNeighbors)
+            foreach (Edge e in cell.edgesToNeighbors)
             {
                 Cell c = e.incident;
-                if (c.zoneId != cell.zoneId)
+                if (c.zoneId != cell.zoneId && (!c.threshold && !cell.threshold))
                 {
-                    cell.threshold = true;
-                    if (c.threshold)
+                    if (visited[c.gridPositionZ, c.gridPositionX])
                     {
-                        cell.threshold = false;
+                        continue;
                     }
-                        
+
+                    //check where the neighbor is 
+                    if (c.gridPositionX != cell.gridPositionX && c.gridPositionZ != cell.gridPositionZ)
+                    {
+                        //cells are diagonal. ignore
+                        continue;
+
+                    }
+                    else if (c.gridPositionX == cell.gridPositionX)
+                    {
+                        //cells are on top of each other and they share the same column
+                        int i = 0;
+                        //look right
+
+                        while(i + cell.gridPositionX < gridWidth)
+                        {
+                            Cell a = grid[cell.gridPositionZ, cell.gridPositionX + i];
+                            Cell b = grid[c.gridPositionZ, c.gridPositionX + i];
+                            visited[a.gridPositionZ, a.gridPositionX] = true;
+                            visited[b.gridPositionZ, b.gridPositionX] = true;
+                            foreach (Edge e1 in a.edgesToNeighbors)
+                            {
+                                if (!visited[e1.incident.gridPositionZ, e1.incident.gridPositionX])
+                                {
+                                    s.Enqueue(e1.incident);
+                                }
+                            }
+                            foreach (Edge e1 in b.edgesToNeighbors)
+                            {
+                                if (!visited[e1.incident.gridPositionZ, e1.incident.gridPositionX])
+                                {
+                                    s.Enqueue(e1.incident);
+                                }
+                            }
+                            if (!a.isWalkable || !b.isWalkable)
+                            {
+                                break;
+                            }
+                            if (a.zoneId != cell.zoneId || b.zoneId != c.zoneId)
+                            {
+                                break;
+                            }
+                            a.threshold = true;
+                            grid[a.gridPositionZ, a.gridPositionX].threshold = true;
+                            i++;
+                        }
+
+                        //look left
+                        i = 0;
+                        while (i > 0)
+                        {
+                            Cell a = grid[cell.gridPositionZ, cell.gridPositionX + i];
+                            Cell b = grid[c.gridPositionZ, c.gridPositionX + i];
+                            visited[a.gridPositionZ, a.gridPositionX] = true;
+                            visited[b.gridPositionZ, b.gridPositionX] = true;
+                            foreach (Edge e1 in a.edgesToNeighbors)
+                            {
+                                if (!visited[e1.incident.gridPositionZ, e1.incident.gridPositionX])
+                                {
+                                    s.Enqueue(e1.incident);
+                                }
+                            }
+                            foreach (Edge e1 in b.edgesToNeighbors)
+                            {
+                                if (!visited[e1.incident.gridPositionZ, e1.incident.gridPositionX])
+                                {
+                                    s.Enqueue(e1.incident);
+                                }
+                            }
+                            if (!a.isWalkable || !b.isWalkable)
+                            {
+                                break;
+                            }
+                            if (a.zoneId != cell.zoneId || b.zoneId != c.zoneId)
+                            {
+                                break;
+                            }
+                            a.threshold = true;
+                            grid[a.gridPositionZ, a.gridPositionX].threshold = true;
+                            i--;
+                        }
+                    }
+
+                    else if (c.gridPositionZ == cell.gridPositionZ)
+                    {
+                        //cells are to the left and right of each other. they share the same row
+                        int i = 0;
+                        //look down
+
+                        while (i + cell.gridPositionZ < gridHeight)
+                        {
+                            Cell a = grid[cell.gridPositionZ + i, cell.gridPositionX];
+                            Cell b = grid[c.gridPositionZ + i, c.gridPositionX];
+                            visited[a.gridPositionZ, a.gridPositionX] = true;
+                            visited[b.gridPositionZ, b.gridPositionX] = true;
+                            foreach (Edge e1 in a.edgesToNeighbors)
+                            {
+                                if (!visited[e1.incident.gridPositionZ, e1.incident.gridPositionX])
+                                {
+                                    s.Enqueue(e1.incident);
+                                }
+                            }
+                            foreach (Edge e1 in b.edgesToNeighbors)
+                            {
+                                if (!visited[e1.incident.gridPositionZ, e1.incident.gridPositionX])
+                                {
+                                    s.Enqueue(e1.incident);
+                                }
+                            }
+                            if (!a.isWalkable || !b.isWalkable)
+                            {
+                                break;
+                            }
+                            if (a.zoneId != cell.zoneId || b.zoneId != c.zoneId)
+                            {
+                                break;
+                            }
+                            a.threshold = true;
+                            grid[a.gridPositionZ, a.gridPositionX].threshold = true;
+                            i++;
+                        }
+
+                        //look up
+                        while (i > 0)
+                        {
+                            Cell a = grid[cell.gridPositionZ + i, cell.gridPositionX];
+                            Cell b = grid[c.gridPositionZ + i, c.gridPositionX];
+                            visited[a.gridPositionZ, a.gridPositionX] = true;
+                            visited[b.gridPositionZ, b.gridPositionX] = true;
+                            foreach (Edge e1 in a.edgesToNeighbors)
+                            {
+                                if (!visited[e1.incident.gridPositionZ, e1.incident.gridPositionX])
+                                {
+                                    s.Enqueue(e1.incident);
+                                }
+                            }
+                            foreach (Edge e1 in b.edgesToNeighbors)
+                            {
+                                if (!visited[e1.incident.gridPositionZ, e1.incident.gridPositionX])
+                                {
+                                    s.Enqueue(e1.incident);
+                                }
+                            }
+                            if (!a.isWalkable || !b.isWalkable)
+                            {
+                                break;
+                            }
+                            if (a.zoneId != cell.zoneId || b.zoneId != c.zoneId)
+                            {
+                                break;
+                            }
+                            a.threshold = true;
+                            grid[a.gridPositionZ, a.gridPositionX].threshold = true;
+                            i--;
+                        }
+
+                    }
                 }
             }
+
             foreach (Edge e in cell.edgesToNeighbors)
             {
                 if (!visited[e.incident.gridPositionZ, e.incident.gridPositionX])
@@ -371,7 +524,6 @@ public class Map : MonoBehaviour {
             }
         }
     }
-    
 
 
     /* add a threshold to the threshold graph
@@ -415,7 +567,8 @@ public class Map : MonoBehaviour {
 
     /* Given some world position, give the cell that is at that position
      */
-    public Cell CellFromWorldPos(Vector3 worldPos) {
+    public Cell CellFromWorldPos(Vector3 worldPos)
+    {
 
         //Debug.Log("worldpos: " + worldPos);
 
@@ -457,14 +610,14 @@ public class Map : MonoBehaviour {
         Debug.Log("z " + z);
         */
 
-        return grid[z,x];
+        return grid[z, x];
     }
 
 
 
     //for debugging and testing only. used to draw the cell grid
     //note: the grid may be slightly off?
-    
+
     public void OnDrawGizmos()
     {
         //draw the frame of the grid 
@@ -473,18 +626,18 @@ public class Map : MonoBehaviour {
 
         if (grid != null)
         {
-            for(int i = 0; i < gridWidth; i++)
+            for (int i = 0; i < gridWidth; i++)
             {
                 for (int j = 0; j < gridHeight; j++)
                 {
-                    Cell c = grid[j,i];
-                    
+                    Cell c = grid[j, i];
+
                     //uncomment to see thresholds and iswalkables
                     if (c.isWalkable && c.threshold)
                     {
                         Gizmos.color = Color.blue;
                     }
-                    else if(c.isWalkable && !c.threshold)
+                    else if (c.isWalkable && !c.threshold)
                     {
                         Gizmos.color = Color.white;
                     }
@@ -492,7 +645,7 @@ public class Map : MonoBehaviour {
                     {
                         Gizmos.color = Color.red;
                     }
-                    
+
 
 
 
@@ -524,11 +677,13 @@ public class Map : MonoBehaviour {
                         Gizmos.color = Color.green;
                     }
                     */
-                    
+
 
                     Vector3 increment = new Vector3(c.cellSize / 2f, 0, -1f * c.cellSize / 2f);
                     Vector3 center = c.worldPosition + increment;
                     Gizmos.DrawCube(center, new Vector3(c.cellSize, c.cellSize, c.cellSize));
+                    Gizmos.color = Color.black;
+                    Gizmos.DrawWireCube(center, new Vector3(c.cellSize, c.cellSize, c.cellSize));
                 }
             }
 
@@ -547,6 +702,8 @@ public class Map : MonoBehaviour {
         }
         */
     }
+
+
 
     /*Old Code
     public List<Cell> getNeighbors(Cell cell)
@@ -567,7 +724,7 @@ public class Map : MonoBehaviour {
         }
         return neighbors;
     }
-*/
+    */
     public List<Cell> getNeighbor(Cell cell)
     {
         List<Cell> neighbor = new List<Cell>();
@@ -581,6 +738,43 @@ public class Map : MonoBehaviour {
         }
         return neighbor;
     }
-       
 
+
+    //Assigning Colors
+    
+    public void colorMap()
+    {
+        if (grid == null)
+            return;
+        for (int i = 0; i < gridWidth; i++)
+        {
+            for (int j = 0; j < gridHeight; j++)
+            {
+                Cell c = grid[j, i];
+                //spawn cubes
+                GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+
+                cube.transform.position = c.worldPosition;
+                cube.transform.localScale = new Vector3(c.cellSize / 2f, 0, c.cellSize / 2f);
+                //check state of cell  
+                if (c.isWalkable==false)
+                {
+                    //color the cube a obsticale blue
+                    cube.GetComponent<Renderer>().material.color = new Color(0f, 0f, 1f, 1f);
+                }
+                else if (c.threshold==true)
+                {
+                    //color the cube a threshold red
+                    cube.GetComponent<Renderer>().material.color = new Color(1f, 0f, 0f, 1f);
+                }
+                else 
+                {
+                    //yellow for zone color: rgba = 1, 0.92, 0.016, 1
+                    cube.GetComponent<Renderer>().material.color = new Color(1f, 0.92f, 0.016f, 1f);
+                }
+
+            }
+        }
+    }
+    
 }
