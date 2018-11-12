@@ -1,10 +1,15 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+<<<<<<< HEAD
 public class Map : MonoBehaviour {
 
     //delete this comment
+=======
+public class Map : MonoBehaviour
+{
+>>>>>>> 3bc4fed5c37028d5e07b2a08f2989c6e10dfc90a
 
     //globals
     private int mapWidth;
@@ -63,17 +68,17 @@ public class Map : MonoBehaviour {
         grid = new Cell[numZCells, numXCells];
         for (int z = 0; z < numZCells; z++)
         {
-            for(int x = 0; x < numXCells; x++)
+            for (int x = 0; x < numXCells; x++)
             {
                 //get the positon of this cell we want to init
-                Vector3 increment = new Vector3((cellSize * x) + (cellSize/2f), 0, -1 * ((cellSize*z) + (cellSize/2f)));
+                Vector3 increment = new Vector3((cellSize * x) + (cellSize / 2f), 0, -1 * ((cellSize * z) + (cellSize / 2f)));
                 //Vector3 worldPos = topLeftPos + (Vector3.right * (x * (cellSize + (cellSize / 2)))) + (Vector3.forward * (z * (cellSize + (cellSize / 2))));
                 Vector3 worldPos = topLeftPos + increment;
-                grid[z,x] = new Cell(worldPos, x, z, cellSize);
+                grid[z, x] = new Cell(worldPos, x, z, cellSize);
             }
         }
 
-        
+
         //build all possible edges and neighbors for each cell
         for (int z = 0; z < numZCells; z++)
         {
@@ -113,7 +118,7 @@ public class Map : MonoBehaviour {
                 c.AssignNeighbors(possibleEdges);
             }
         }
-        
+
     }
 
 
@@ -123,7 +128,7 @@ public class Map : MonoBehaviour {
     public void DefineZones()
     {
         List<Zone> zones = zm.FindZoneBounds();
-        foreach(Zone z in zones)
+        foreach (Zone z in zones)
         {
 
 
@@ -146,7 +151,11 @@ public class Map : MonoBehaviour {
             {
                 for (int j = topLeftCell.gridPositionX; j <= topRightCell.gridPositionX; j++)
                 {
+<<<<<<< HEAD
                         grid[i, j].zoneId = id;
+=======
+                    grid[i, j].zoneId = id;
+>>>>>>> 3bc4fed5c37028d5e07b2a08f2989c6e10dfc90a
                 }
             }
 
@@ -280,11 +289,15 @@ public class Map : MonoBehaviour {
 
     /* The iterative floodfill used to search through the grid for thresholds
      */
+<<<<<<< HEAD
      /*
     public void FindThresholdsSearchI(bool[,] visited, Cell c, int topBound, int bottomBound, int leftBound, int rightBound)
+=======
+    public void FindThresholdsSearchI(bool[,] visited, Cell start, int topBound, int bottomBound, int leftBound, int rightBound)
+>>>>>>> 3bc4fed5c37028d5e07b2a08f2989c6e10dfc90a
     {
         Stack<Cell> s = new Stack<Cell>();
-        s.Push(c);
+        s.Push(start);
         while (s.Count > 0)
         {
             Cell cell = s.Pop();
@@ -315,10 +328,9 @@ public class Map : MonoBehaviour {
             if (!visited[cell.gridPositionZ, cell.gridPositionX])
             {
                 visited[cell.gridPositionZ, cell.gridPositionX] = true;
-                if (c.zoneId != cell.zoneId)
+                if (start.zoneId != cell.zoneId)
                 {
                     cell.threshold = true;
-                    //Debug.Log("threshold found");
                 }
             }
 
@@ -415,7 +427,8 @@ public class Map : MonoBehaviour {
 
     /* Given some world position, give the cell that is at that position
      */
-    public Cell CellFromWorldPos(Vector3 worldPos) {
+    public Cell CellFromWorldPos(Vector3 worldPos)
+    {
 
         //Debug.Log("worldpos: " + worldPos);
 
@@ -439,6 +452,17 @@ public class Map : MonoBehaviour {
         percentX = Mathf.Clamp01(percentX);
         percentZ = Mathf.Clamp01(percentZ);
 
+<<<<<<< HEAD
+=======
+        /*
+        Debug.Log("somecomputation: " + ((worldPos.x + (float)mapWidth / 2f) / (float)mapWidth));
+        Debug.Log("precentx" + percentX);
+        Debug.Log("percentz" + percentZ);
+        */
+
+
+
+>>>>>>> 3bc4fed5c37028d5e07b2a08f2989c6e10dfc90a
         //find the indeces of the cell in the grid using the world position
         int x = (Mathf.RoundToInt(gridWidth * percentX)) - 1;
         int z = (Mathf.RoundToInt(gridHeight * percentZ)) - 1;
@@ -457,14 +481,14 @@ public class Map : MonoBehaviour {
         Debug.Log("z " + z);
         */
 
-        return grid[z,x];
+        return grid[z, x];
     }
 
 
 
     //for debugging and testing only. used to draw the cell grid
     //note: the grid may be slightly off?
-    
+
     public void OnDrawGizmos()
     {
         //draw the frame of the grid 
@@ -473,30 +497,40 @@ public class Map : MonoBehaviour {
 
         if (grid != null)
         {
-            for(int i = 0; i < gridWidth; i++)
+            for (int i = 0; i < gridWidth; i++)
             {
                 for (int j = 0; j < gridHeight; j++)
                 {
+<<<<<<< HEAD
                     Cell c = grid[j,i];
+=======
+                    Cell c = grid[j, i];
+
+                    //uncomment to see thresholds and iswalkables
+>>>>>>> 3bc4fed5c37028d5e07b2a08f2989c6e10dfc90a
                     
                     //uncomment to see thresholds and iswalkables
                     if (c.isWalkable && c.threshold)
                     {
                         Gizmos.color = Color.blue;
                     }
-                    else if(c.isWalkable && !c.threshold)
+                    else if (c.isWalkable && !c.threshold)
                     {
                         Gizmos.color = Color.white;
                     }
                     else if (!c.isWalkable)
                     {
-                        Gizmos.color = Color.red;
+                        //Gizmos.color = Color.red;
                     }
                     
 
 
+<<<<<<< HEAD
 
                     //another way to draw the zones
+=======
+                    //uncomment to see the zones
+>>>>>>> 3bc4fed5c37028d5e07b2a08f2989c6e10dfc90a
                     /*
                     int temp = c.zoneId % 5;
                     if (temp == 0)
@@ -525,6 +559,22 @@ public class Map : MonoBehaviour {
                     }
                     */
                     
+<<<<<<< HEAD
+=======
+
+                    //another way to colors zones
+                    /*
+                    if (c.zoneId % 2 == 0)
+                    {
+                        Gizmos.color = Color.green;
+                    }
+                    else
+                    {
+                        Gizmos.color = Color.yellow;
+                    }
+                    */
+
+>>>>>>> 3bc4fed5c37028d5e07b2a08f2989c6e10dfc90a
 
                     Vector3 increment = new Vector3(c.cellSize / 2f, 0, -1f * c.cellSize / 2f);
                     Vector3 center = c.worldPosition + increment;
@@ -548,7 +598,14 @@ public class Map : MonoBehaviour {
         */
     }
 
+<<<<<<< HEAD
     /*Old Code
+=======
+
+
+    /*
+    //THIS DOES NOT WORK NEED TO BE FIXED
+>>>>>>> 3bc4fed5c37028d5e07b2a08f2989c6e10dfc90a
     public List<Cell> getNeighbors(Cell cell)
     {
         List<Cell> neighbors = new List<Cell>();
@@ -566,6 +623,7 @@ public class Map : MonoBehaviour {
             }
         }
         return neighbors;
+<<<<<<< HEAD
     }
 */
     public List<Cell> getNeighbor(Cell cell)
@@ -582,5 +640,11 @@ public class Map : MonoBehaviour {
         return neighbor;
     }
        
+=======
+
+
+    }
+    */
+>>>>>>> 3bc4fed5c37028d5e07b2a08f2989c6e10dfc90a
 
 }
