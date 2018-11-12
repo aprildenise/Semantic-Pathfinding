@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
-public class Cell {
+public class Cell{
 
+    //^^ should not be from monobehavior??
 
     public int zoneId; //the zone that the cell belongs to
     public bool isWalkable; //is the cell walkable
@@ -18,13 +19,23 @@ public class Cell {
     public int gridPositionZ;
     public bool threshold; //temp
 
+    //for A* gCost and hCost
+    public int gCost;
+    public int hCost;
+    public Cell parent; //only specifically for astar, should change later so that we 
+    //don't have so many references in this class
+
+
     //constructor
     public Cell(Vector3 worldpos, int gridx, int gridz, float size)
     {
+        zoneId = -1;
         worldPosition = worldpos;
         gridPositionX = gridx;
         gridPositionZ = gridz;
+        threshold = false;
         cellSize = size;
+        edgesToNeighbors = new List<Edge>();
         CheckIfWalkable();
     }
 
@@ -37,7 +48,7 @@ public class Cell {
         NavMeshHit hit;
         Vector3 increment = new Vector3(cellSize / 2f, 0, -1f * cellSize / 2f);
         Vector3 center = worldPosition + increment;
-        if (NavMesh.SamplePosition(center, out hit, cellSize/2, NavMesh.AllAreas))
+        if (NavMesh.SamplePosition(center, out hit, cellSize, NavMesh.AllAreas))
         {
             //this cell is walkable
             isWalkable = true;
@@ -55,5 +66,12 @@ public class Cell {
     {
         edgesToNeighbors = n;
     }
-
+    //get fCost
+    public int fCost
+    {
+        get
+        {
+            return gCost + hCost;
+        }
+    }
 }

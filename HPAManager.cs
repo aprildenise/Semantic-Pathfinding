@@ -17,7 +17,6 @@ public class HPAManager : MonoBehaviour {
         m.BuildCellGrid(.1f);
         m.DefineZones();
         m.FindThresholds();
-
 	}
 
     

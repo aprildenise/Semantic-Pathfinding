@@ -4,13 +4,14 @@ using UnityEngine;
 
 public class Map : MonoBehaviour {
 
-
+    //delete this comment
 
     //globals
     private int mapWidth;
     private int mapHeight;
     private Vector3 topLeftPos; //world position of the top left corner of the map
     public Cell[,] grid; //2d grid of cells that cover the map
+    public Cell thresholdGraph;
 
     //references
     public ZoneManager zm;
@@ -18,6 +19,7 @@ public class Map : MonoBehaviour {
     public Renderer topLeft;
     public Renderer topRight;
     public Renderer bottomRight;
+    public AStarAlgo asm; //temp
 
     //optional
     private int gridWidth; //number of cells across
@@ -144,8 +146,7 @@ public class Map : MonoBehaviour {
             {
                 for (int j = topLeftCell.gridPositionX; j <= topRightCell.gridPositionX; j++)
                 {
-                    
-                    grid[i, j].zoneId = id;
+                        grid[i, j].zoneId = id;
                 }
             }
 
@@ -164,10 +165,29 @@ public class Map : MonoBehaviour {
         //table to see if we have visited a cell
         bool[,] visited = new bool[gridHeight, gridWidth];
 
+        int leftBound = 0;
+        int rightBound = gridWidth;
+        int bottomBound = gridHeight;
+        int topBound = 0;
+        bool validStart = false;
+        Cell startCell;
+        do
+        {
+            int randX = Random.Range(leftBound, rightBound + 1);
+            int randZ = Random.Range(bottomBound, topBound + 1);
+            startCell = grid[randZ, randX];
+            if (startCell.isWalkable)
+            {
+                validStart = true;
+            }
+        } while (!validStart);
+
+        /*
         //get a zone
         foreach (Zone z in zm.zones)
         {
             //get the bounds of the zone, in terms of the grid coordinates/indeces
+
             Cell topLeftCell = CellFromWorldPos(z.topLeft);
             Cell topRightCell = CellFromWorldPos(z.topRight);
             Cell bottomLeftCell = CellFromWorldPos(z.bottomLeft);
@@ -192,11 +212,20 @@ public class Map : MonoBehaviour {
             } while (!validStart);
 
             //Debug.Log("visited length:" + visited.GetLength(0) + ", " + visited.GetLength(1));
+            
 
-            FindThresholdsSearchI(visited, startCell, topBound, bottomBound, leftBound, rightBound);
+            
+            //FindThresholdsSearchI(visited, startCell, topBound, bottomBound, leftBound, rightBound);
         }
+        */
+        FindThresholdSearchAlt(visited, startCell);
 
     }
+
+
+
+
+
 
 
     /* The recursive floodfill function used to search through the 2d grid
@@ -251,6 +280,7 @@ public class Map : MonoBehaviour {
 
     /* The iterative floodfill used to search through the grid for thresholds
      */
+     /*
     public void FindThresholdsSearchI(bool[,] visited, Cell c, int topBound, int bottomBound, int leftBound, int rightBound)
     {
         Stack<Cell> s = new Stack<Cell>();
@@ -298,6 +328,89 @@ public class Map : MonoBehaviour {
             }
         }
     }
+    */
+
+
+    
+    public void FindThresholdSearchAlt(bool[,] visited, Cell start)
+    {
+        Queue<Cell> s = new Queue<Cell>();
+        List<int> zoneArray = new List<int>();
+        Cell t = thresholdGraph; //threshold graph pointer
+        s.Enqueue(start);
+
+
+        
+        while (s.Count != 0)
+        {
+
+            Cell cell = s.Dequeue();
+            int x = cell.gridPositionX;
+            int z = cell.gridPositionZ;
+            
+            visited[cell.gridPositionZ, cell.gridPositionX] = true;
+            foreach(Edge e in cell.edgesToNeighbors)
+            {
+                Cell c = e.incident;
+                if (c.zoneId != cell.zoneId)
+                {
+                    cell.threshold = true;
+                    if (c.threshold)
+                    {
+                        cell.threshold = false;
+                    }
+                        
+                }
+            }
+            foreach (Edge e in cell.edgesToNeighbors)
+            {
+                if (!visited[e.incident.gridPositionZ, e.incident.gridPositionX])
+                {
+                    s.Enqueue(e.incident);
+                }
+            }
+        }
+    }
+    
+
+
+    /* add a threshold to the threshold graph
+     * Input: level of the threshold graph, threshold we would like to add, a pointer to the end of the graph
+     * Output: new ptr to the end of the graph
+     */
+    public Cell AddToThresholdGraph(Cell threshold, Cell ptrToGraph)
+    {
+        if (thresholdGraph == null)
+        {
+            thresholdGraph = new Cell(threshold.worldPosition, threshold.gridPositionX, threshold.gridPositionZ, threshold.cellSize);
+            return thresholdGraph;
+
+        }
+        else
+        {
+
+            Cell newThreshold = new Cell(threshold.worldPosition, threshold.gridPositionX, threshold.gridPositionZ, threshold.cellSize);
+            //create an edge from this new threshold to the last one in the graph
+            float distance = Vector3.Distance(newThreshold.worldPosition, ptrToGraph.worldPosition);
+
+            //check if the given threshold is very close to the previous one
+            if (distance <= 3f)
+            {
+                //do not add this threshold
+                return ptrToGraph;
+            }
+
+            Edge edgeToNew = new Edge(ptrToGraph, newThreshold, Mathf.Round(distance));
+            Edge edge2FromNew = new Edge(newThreshold, ptrToGraph, Mathf.Round(distance));
+            //add the threshold to the graph
+            ptrToGraph.edgesToNeighbors.Add(edgeToNew);
+            newThreshold.edgesToNeighbors.Add(edge2FromNew);
+            return newThreshold;
+
+        }
+
+
+    }
 
 
     /* Given some world position, give the cell that is at that position
@@ -325,14 +438,6 @@ public class Map : MonoBehaviour {
         //make sure the percent does not go beyond 100%
         percentX = Mathf.Clamp01(percentX);
         percentZ = Mathf.Clamp01(percentZ);
-
-        /*
-        Debug.Log("somecomputation: " + ((worldPos.x + (float)mapWidth / 2f) / (float)mapWidth));
-        Debug.Log("precentx" + percentX);
-        Debug.Log("percentz" + percentZ);
-        */
-        
-        
 
         //find the indeces of the cell in the grid using the world position
         int x = (Mathf.RoundToInt(gridWidth * percentX)) - 1;
@@ -373,9 +478,8 @@ public class Map : MonoBehaviour {
                 for (int j = 0; j < gridHeight; j++)
                 {
                     Cell c = grid[j,i];
-
-                    //uncomment to see thresholds and iswalkables
                     
+                    //uncomment to see thresholds and iswalkables
                     if (c.isWalkable && c.threshold)
                     {
                         Gizmos.color = Color.blue;
@@ -390,54 +494,93 @@ public class Map : MonoBehaviour {
                     }
                     
 
-                    //uncomment to see the zones
+
+
+                    //another way to draw the zones
                     /*
-                    if (c.zoneId == 0) {
-                        Gizmos.color = Color.red;
-                    }
-                    else if (c.zoneId == 1)
+                    int temp = c.zoneId % 5;
+                    if (temp == 0)
                     {
                         Gizmos.color = Color.yellow;
                     }
-                    else if (c.zoneId == 2)
-                    {
-                        Gizmos.color = Color.green;
-                    }
-                    else if (c.zoneId == 3)
+                    else if (temp == 1)
                     {
                         Gizmos.color = Color.blue;
                     }
-                    else if (c.zoneId == 4)
-                    {
-                        Gizmos.color = Color.cyan;
-                    }
-                    else if (c.zoneId == 5)
-                    {
-                        Gizmos.color = Color.gray;
-                    }
-                    else if (c.zoneId == 6)
+                    else if (temp == 2)
                     {
                         Gizmos.color = Color.magenta;
                     }
-                    else if (c.zoneId == 7)
+                    else if (temp == 3)
                     {
-                        Gizmos.color = Color.white;
+                        Gizmos.color = Color.cyan;
+                    }
+                    else if (temp == 4)
+                    {
+                        Gizmos.color = Color.grey;
                     }
                     else
                     {
-                        Gizmos.color = Color.clear;
+                        Gizmos.color = Color.green;
                     }
                     */
-
+                    
 
                     Vector3 increment = new Vector3(c.cellSize / 2f, 0, -1f * c.cellSize / 2f);
                     Vector3 center = c.worldPosition + increment;
-                    Gizmos.DrawCube(center, new Vector3(1, 1, 1));
+                    Gizmos.DrawCube(center, new Vector3(c.cellSize, c.cellSize, c.cellSize));
                 }
             }
+
         }
+        //drawing the path
+        /*
+        if (asm.aStarPath != null)
+        {
+            foreach (Cell c in asm.aStarPath)
+            {
+                Gizmos.color = Color.yellow;
+                Vector3 increment = new Vector3(c.cellSize / 2f, 0, -1f * c.cellSize / 2f);
+                Vector3 center = c.worldPosition + increment;
+                Gizmos.DrawCube(center, new Vector3(c.cellSize, c.cellSize, c.cellSize));
+            }
+        }
+        */
     }
-    
-    
-    
+
+    /*Old Code
+    public List<Cell> getNeighbors(Cell cell)
+    {
+        List<Cell> neighbors = new List<Cell>();
+        for (int x = -1; x <= 1; x++)
+        {
+            for (int z = -1; z <= 1; z++)
+            {
+                if (x == 0 && z == 0)
+                    continue;
+                int checkX = cell.gridPositionX + x;
+                int checkZ = cell.gridPositionZ + z;
+                if (checkX >= 0 && checkX < mapHeight && checkZ >= 0 && checkZ < mapWidth)
+                    neighbors.Add(grid(checkX, checkZ));
+
+            }
+        }
+        return neighbors;
+    }
+*/
+    public List<Cell> getNeighbor(Cell cell)
+    {
+        List<Cell> neighbor = new List<Cell>();
+        List<Edge> e = cell.edgesToNeighbors;
+        for (int i = 0; i < e.Count; i++)
+        {
+            if (e[i].isActive)
+            {
+                neighbor.Add(e[i].incident);
+            }
+        }
+        return neighbor;
+    }
+       
+
 }
