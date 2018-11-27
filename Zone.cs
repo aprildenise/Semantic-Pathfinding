@@ -14,6 +14,8 @@ public class Zone{
     public Vector3 bottomLeft;
     public Vector3 bottomRight;
 
+    public List<Threshold> thresholds; //list of thresholds that belong to this zone
+
 
     //constructor
     public Zone(int zoneId, Renderer renderer)
@@ -38,15 +40,23 @@ public class Zone{
         topRight = new Vector3(approxRight, approxY, approxTop);
         bottomLeft = new Vector3(approxLeft, approxY, approxBottom);
         bottomRight = new Vector3(approxRight, approxY, approxBottom);
-
-        /*
-        Debug.Log("new zone");
-        Debug.Log("tl" + topLeft);
-        Debug.Log("tr" + topRight);
-        Debug.Log("bl" + bottomLeft);
-        Debug.Log("br" + bottomRight);
-        */
         
+    }
+
+
+    /* Given a threshold, add it to this zone's threshold list
+     */
+    public void AddThresholdToZone(Threshold t)
+    {
+        if (thresholds == null)
+        {
+            thresholds = new List<Threshold>();
+            thresholds.Add(t);
+        }
+        else
+        {
+            thresholds.Add(t);
+        }
     }
 
 

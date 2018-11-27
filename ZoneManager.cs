@@ -4,10 +4,9 @@ using UnityEngine;
 
 public class ZoneManager : MonoBehaviour {
 
-
+    public List<Zone> zones; //all the zones in the scene
 
     public List<GameObject> zonesObjects = new List<GameObject>(6);
-    public List<Zone> zones; //the original list of zones. has 10 zones.
 
     public List<GameObject> zonesObjectsAlt = new List<GameObject>(50);
     public List<GameObject> zonesTest = new List<GameObject>(2);
@@ -28,6 +27,17 @@ public class ZoneManager : MonoBehaviour {
         this.zones = zones;
         return zones;
 
+    }
+
+
+    /* Given a zone id, return the zone that belongs to that id
+     * Input: zone id
+     * Output: zone object with that id
+     */
+    public Zone GetZone(int id)
+    {
+        Zone z = zones[id];
+        return z;
     }
 
 }

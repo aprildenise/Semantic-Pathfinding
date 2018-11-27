@@ -28,43 +28,43 @@ public class AStarAlgo : MonoBehaviour
 
 
 
-    void Update()
+    void LateUpdate()
     {
         //FindPath(agent.position, target.position);
     }
 
 
-    //move the agent to the target position
-    private void FixedUpdate()
-    {
-        if (aStarPath != null && currentCellToMoveTo < aStarPath.Count)
-        {
-            Timer += Time.deltaTime * .1f;
-            currentPos = aStarPath[currentCellToMoveTo].worldPosition;
-            if (agent.transform.position != currentPos)
-            {
-                agent.transform.position = Vector3.Lerp(agent.transform.position, currentPos, Timer);
-            }
-            else
-            {
-                if (currentCellToMoveTo < aStarPath.Count - 1)
-                {
-                    currentCellToMoveTo++;
-                    CheckCell();
-                }
-            }
-        }
-    }
+    ////move the agent to the target position
+    //private void FixedUpdate()
+    //{
+    //    if (aStarPath != null && currentCellToMoveTo < aStarPath.Count)
+    //    {
+    //        Timer += Time.deltaTime * 1f;
+    //        currentPos = aStarPath[currentCellToMoveTo].worldPosition;
+    //        if (agent.transform.position != currentPos)
+    //        {
+    //            agent.transform.position = Vector3.Lerp(agent.transform.position, currentPos, Timer);
+    //        }
+    //        else
+    //        {
+    //            if (currentCellToMoveTo < aStarPath.Count - 1)
+    //            {
+    //                currentCellToMoveTo++;
+    //                CheckCell();
+    //            }
+    //        }
+    //    }
+    //}
 
-    //for movement
-    void CheckCell()
-    {
-        Timer = 0;
-        currentPos = aStarPath[currentCellToMoveTo].worldPosition;
-    }
+    ////for movement
+    //void CheckCell()
+    //{
+    //    Timer = 0;
+    //    currentPos = aStarPath[currentCellToMoveTo].worldPosition;
+    //}
 
     //A*
-    void FindPath(Vector3 startPos, Vector3 targetPos)
+    public void FindPath(Vector3 startPos, Vector3 targetPos)
     {
         Cell startCell = map.CellFromWorldPos(startPos);
         Cell targetCell = map.CellFromWorldPos(targetPos);
@@ -203,4 +203,5 @@ public class AStarAlgo : MonoBehaviour
             }
         }
     }
+
 }

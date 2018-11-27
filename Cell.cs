@@ -5,7 +5,6 @@ using UnityEngine.AI;
 
 public class Cell{
 
-    //^^ should not be from monobehavior??
 
     public int zoneId; //the zone that the cell belongs to
     public bool isWalkable; //is the cell walkable
@@ -60,12 +59,13 @@ public class Cell{
     }
 
 
-    /* Assign the given list of edges and neighbors to this cell
+    /* Assign the given list of edges and neighbors to this cell. Change later
      */
     public void AssignNeighbors(List<Edge> n)
     {
         edgesToNeighbors = n;
     }
+
     //get fCost
     public int fCost
     {
