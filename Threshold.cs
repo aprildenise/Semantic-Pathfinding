@@ -5,6 +5,7 @@ using UnityEngine;
 public class Threshold : Cell{
 
     //zoneid belonging to this threshold
+    //this is the zoneID that this threshold is connecting
     public int tzoneID;
 
     //Constructor 

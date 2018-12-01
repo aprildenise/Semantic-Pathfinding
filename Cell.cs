@@ -13,12 +13,12 @@ public class Cell{
 
     public List<Edge> edgesToNeighbors;
 
-    //optional
     public int gridPositionX; //position of the cell in the 2d grid
     public int gridPositionZ;
     public bool threshold; //temp
 
     //for A* gCost and hCost
+    //!!WILL HAVE TO CHANGE LATER!!
     public int gCost;
     public int hCost;
     public Cell parent; //only specifically for astar, should change later so that we 
@@ -42,7 +42,7 @@ public class Cell{
     /* Check if this cell is walkable by checking if the navmesh
      * is present at its worldPosition
      */
-    public void CheckIfWalkable()
+    private void CheckIfWalkable()
     {
         NavMeshHit hit;
         Vector3 increment = new Vector3(cellSize / 2f, 0, -1f * cellSize / 2f);
@@ -65,6 +65,7 @@ public class Cell{
     {
         edgesToNeighbors = n;
     }
+
 
     //get fCost
     public int fCost

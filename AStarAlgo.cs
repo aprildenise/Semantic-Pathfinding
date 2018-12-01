@@ -5,27 +5,24 @@ using UnityEngine;
 public class AStarAlgo : MonoBehaviour
 {
 
-    //variables
+    //references
     public Map map;
-    public Transform agent;
-    public Transform target;
 
-    public List<Cell> aStarPath;
+    //globals
+    private Transform agent;
+    private Transform target;
+
+    public List<Cell> path;
 
     //temp
-    List<Cell> things;
+    //List<Cell> things;
 
     //for movement
+    /*
     public Vector3 currentPos;
     public int currentCellToMoveTo = 0;
-    float Timer = 0;
-
-
-    void Awake()
-    {
-        map.GetComponent<Map>();
-    }
-
+    */
+    //float Timer = 0; 
 
 
     void LateUpdate()
@@ -63,7 +60,11 @@ public class AStarAlgo : MonoBehaviour
     //    currentPos = aStarPath[currentCellToMoveTo].worldPosition;
     //}
 
-    //A*
+
+
+    /* Find the path using the A* algo
+     * Input: starting position of the agent and its target position
+     */
     public void FindPath(Vector3 startPos, Vector3 targetPos)
     {
         Cell startCell = map.CellFromWorldPos(startPos);
@@ -80,17 +81,11 @@ public class AStarAlgo : MonoBehaviour
             Cell currCell = openSet[0];
             for (int i = 1; i < openSet.Count; i++)
             {
-                if (openSet[i].fCost < currCell.fCost || (openSet[i].fCost == currCell.fCost && openSet[i].hCost < currCell.hCost)) //new code
-                //if (openSet[i].fCost < currCell.fCost || (openSet[i].fCost == currCell.fCost)
+                //choose which cell to look at
+                if (openSet[i].fCost < currCell.fCost || (openSet[i].fCost == currCell.fCost && openSet[i].hCost < currCell.hCost))
                 {
 
                     currCell = openSet[i];
-                    /*
-                    if (openSet[i].hCost < currCell.hCost)
-                    {
-                        
-                    }   
-                    */
                 }
             }
 
@@ -100,19 +95,20 @@ public class AStarAlgo : MonoBehaviour
             closedSet.Add(currCell);
 
 
+            //check if we have already reached the goal
             if (currCell == targetCell)
             {
-                RetracePath(startCell, targetCell);
+                List<Cell> p = RetracePath(startCell, targetCell);
                 return;
             }
 
 
-            //check neighbors
-            //foreach (Cell neighbor in map.getNeighbor(currCell))
-            foreach (Edge e in currCell.edgesToNeighbors) //new code
+            //if we have yet to reach the goal, look at the cell's neighbors
+            foreach (Edge e in currCell.edgesToNeighbors)
             {
 
-                Cell neighbor = e.incident; //new code
+                Cell neighbor = e.incident; 
+                //if this neighbor is unwalkable (should not be) or if we already visited this cell
                 if (!neighbor.isWalkable || closedSet.Contains(neighbor))
                 {
                     continue;
@@ -123,39 +119,22 @@ public class AStarAlgo : MonoBehaviour
                 if (newCostToNeighbor < neighbor.gCost || !openSet.Contains(neighbor))
                 {
 
+                    //update this cell with the new costs
                     neighbor.gCost = newCostToNeighbor;
                     neighbor.hCost = GetDistance(neighbor, targetCell);
-                    //new code
                     //change the parent of the neighbor
                     neighbor.parent = currCell;
 
-                    /*
-                    List<Edge> e = neighbor.edgesToNeighbors;
-                    int cost = newCostToNeighbor;
-                    for (int i = 0; i < e.Count; i++)
-                    {
-                        if (e[i].isActive)
-                        {
-                            if (e[i].origin.fCost < cost)
-                            {
-                                cost = e[i].origin.fCost;
-                            }
-                            else
-                            {
-                                e[i].origin = currCell;
-                            }
-                        }
-                    }
-                    */
-
                     if (!openSet.Contains(neighbor))
                     {
+                        //add this neighboring cell to the open set
                         openSet.Add(neighbor);
                     }
                 }
             }
         }
     }
+
 
     //get distance between two cells 
     int GetDistance(Cell cellA, Cell cellB)
@@ -169,11 +148,12 @@ public class AStarAlgo : MonoBehaviour
     }
 
 
-    //new code
+
     /* Return the path given by the A* algorithm
      * Input: the start cell of the agent, the end cell of the agent
+     * Output: list of nodes that is the path to the goal
      */
-    public void RetracePath(Cell start, Cell end)
+    public List<Cell> RetracePath(Cell start, Cell end)
     {
         List<Cell> path = new List<Cell>();
         Cell currentCell = end;
@@ -184,17 +164,35 @@ public class AStarAlgo : MonoBehaviour
         }
 
         path.Reverse();
-        aStarPath = path;
-        things = path;
+        this.path = path;
+        return path;
     }
 
+    //returns the found path
+    /*
+    public List<Cell> RetrievesPath(Cell start, Cell end)
+    {
+        List<Cell> path = new List<Cell>();
+        Cell currentCell = end;
+        while (currentCell != start)
+        {
+            path.Add(currentCell);
+            currentCell = currentCell.parent;
+        }
+
+        path.Reverse();
+        this.path = path;
+        return path;
+    }
+    */
 
 
+    
     private void OnDrawGizmos()
     {
-        if (things != null)
+        if (path != null)
         {
-            foreach (Cell c in things)
+            foreach (Cell c in path)
             {
                 Vector3 increment = new Vector3(c.cellSize / 2f, 0, -1f * c.cellSize / 2f);
                 Vector3 center = c.worldPosition + increment;
@@ -203,5 +201,6 @@ public class AStarAlgo : MonoBehaviour
             }
         }
     }
+    
 
 }

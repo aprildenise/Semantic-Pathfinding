@@ -7,8 +7,8 @@ public class Zone{
 
     public int zoneId;
     public Renderer renderer;
-    public int width;
-    public int height;
+    //public int width; //!!MAY NOT BE NEEDED!!
+    //public int height;
     public Vector3 topLeft; //the 4 corners of the zone
     public Vector3 topRight;
     public Vector3 bottomLeft;
@@ -26,7 +26,7 @@ public class Zone{
     }
 
 
-    public void FindZoneCorners()
+    private void FindZoneCorners()
     {
         //get the dimensions of this zone
         float approxLeft = renderer.bounds.center.x - (renderer.bounds.size.x / 2);
@@ -46,17 +46,15 @@ public class Zone{
 
     /* Given a threshold, add it to this zone's threshold list
      */
+
+
     public void AddThresholdToZone(Threshold t)
     {
         if (thresholds == null)
         {
             thresholds = new List<Threshold>();
-            thresholds.Add(t);
         }
-        else
-        {
-            thresholds.Add(t);
-        }
+        thresholds.Add(t);
     }
 
 

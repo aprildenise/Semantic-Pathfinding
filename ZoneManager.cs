@@ -12,10 +12,15 @@ public class ZoneManager : MonoBehaviour {
     public List<GameObject> zonesTest = new List<GameObject>(2);
     //an alternative list of zones. Has more zones. to use, make the loop below iterate on this list instead of the above one
 
-    /* Find the dimensions of each zone in the zones list
+
+    /* With the list of zoneObjects, initialize the Zone Objects and assign to them a zoneID
      */
-    public List<Zone> FindZoneBounds()
+    public List<Zone> InitZones()
     {
+        if (this.zones != null)
+        {
+            return this.zones;
+        }
         List<Zone> zones = new List<Zone>();
         int num = 0;
         foreach (GameObject z in zonesObjectsAlt)

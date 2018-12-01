@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -7,45 +7,35 @@ public class HPAManager : MonoBehaviour {
 
     //references
     public Map m;
-    public Transform agent;
-    public Transform goal;
-    //private Renderer renderer;
+    public Transform agent; //temp
+    public Transform goal; //temp
     public AStarAlgo aStar;
     public ZoneManager zm;
 
-
+    
     // used for testing and other debugging
     // Use this for initialization
     void Start () {
-        m.GetMapDimensions(); 
-        m.BuildCellGrid(.1f);
-        m.DefineZones();
-        m.FindThresholds();
-        m.AddThresholdToZone();
-        ThresholdPath(agent.position, goal.position);
-        //Tester();
-        //m.CreateImage();
-       
+        m.InitMap();
+        
     }
 
-
-
-    void Tester()
+    private void LateUpdate()
     {
-        foreach (Threshold t in m.thresholdGraph)
-        {
-            Debug.Log("Threshold zoneid:" + t.zoneId);
-        }
+        HPAFindPath(agent.position, goal.position);
     }
 
 
+
+    //rewrote a clearer version below 
+    /*
     void ThresholdPath(Vector3 startPos, Vector3 targetPos)
     {
         Cell start = m.CellFromWorldPos(startPos);
         Cell target = m.CellFromWorldPos(targetPos);
 
-        Debug.Log("Starting cell's zone id:" + start.zoneId);
-        Debug.Log("Target cell's zone id:" + target.zoneId);
+       // Debug.Log("Starting cell's zone id:" + start.zoneId);
+       // Debug.Log("Target cell's zone id:" + target.zoneId);
 
         //define start and goal zones
         //Zone startZ = new Zone(start.zoneId, GetComponent<Renderer>());
@@ -64,7 +54,15 @@ public class HPAManager : MonoBehaviour {
         Cell startThreshold = start;
         Cell targetThreshold = target;
 
+        foreach (Threshold t in m.thresholdGraph)
+        {
+            Debug.Log("Threshold zoneid:" + t.zoneId);
+        }
+
         //traverse threshold graph
+        Vector3 agentThreshold = FindThresholdCell(startPos);
+        Vector3 goalThreshold = FindThresholdCell(startPos);
+
         for (int i = 0; i < startZ.thresholds.Count; i++)
         {
             Threshold t = startZ.thresholds[i];
@@ -122,30 +120,64 @@ public class HPAManager : MonoBehaviour {
             }
         }
         aStar.FindPath(startThreshold.worldPosition, targetThreshold.worldPosition);
+
+        //Search the zones between thresholds in the found threshold path
+        List<Cell> thresholdPath = aStar.retrievesPath(startThreshold, targetThreshold);
+        for (int i = 0; i < thresholdPath.Count - 1; i++)
+        {
+            //find the path of the zones
+            aStar.FindPath(thresholdPath[i].worldPosition, thresholdPath[i + 1].worldPosition);
+        }
+        
+    }
+    */
+
+    //cleaner version of hte cod above
+    void ThresholdPath(Vector3 startPos, Vector3 targetPos)
+    {
+       
+        //Finding starting and ending thresholds
+        Vector3 startThreshold = FindThresholdCell(startPos);
+        Vector3 targetThreshold = FindThresholdCell(targetPos);
+
+        //Finding Path
+        aStar.FindPath(startThreshold, targetThreshold);
+
+        //Search the zones between thresholds in the found threshold path
+        
+        //List<Cell> thresholdPath = aStar.retrievesPath(startThreshold, targetThreshold);
+        //for (int i = 0; i < thresholdPath.Count - 1; i++)
+        //{
+        //    //find the path of the zones
+        //    aStar.FindPath(thresholdPath[i].worldPosition, thresholdPath[i + 1].worldPosition);
+        //}
+
     }
 
 
-    Vector3 FindThresholdCell(Vector3 cPos)
-    {
-        Cell c = m.CellFromWorldPos(cPos);
 
+    /* Given a position, find the closest threshold to that position
+     * Input: starting position 
+     * Output: position of the chosen threshold
+     */
+    private Vector3 FindThresholdCell(Cell c)
+    {
+  
         //define start and goal zones
-        Zone Z = new Zone(c.zoneId, GetComponent<Renderer>());
+        //find the zone that belongs to this cell to get its thresholds
+        Zone Z = zm.GetZone(c.zoneId);
 
         //distance tracker
         int shortestDist = 2147483647; //holding value
 
 
-
-        Cell cThreshold = c;
-
-        //traverse threshold graph
+        //traverse the threshold graph to find the appropriate threshold
+        Cell cThreshold = null;
         for (int i = 0; i < Z.thresholds.Count; i++)
         {
 
-
+            //find the closest threshold. this is the post approriate threshold
             Threshold t = Z.thresholds[i];
-            //find target cell for threshold A*
             foreach (Edge e in t.edgesToNeighbors)
             {
                 Cell neighbor = e.incident; //new code
@@ -165,6 +197,8 @@ public class HPAManager : MonoBehaviour {
                     continue;
                 }
             }
+            
+
         }
         return cThreshold.worldPosition;
     }
@@ -186,31 +220,29 @@ public class HPAManager : MonoBehaviour {
         Cell start = m.CellFromWorldPos(startPos);
         Cell target = m.CellFromWorldPos(targetPos);
 
-        //Zone z = new Zone(start.zoneId, GetComponent<Renderer>());
-
-
         //check if target and start are inthe same zone
         //If yes run A*
         if (start.zoneId == target.zoneId)
         {
-            //AStarAlgo.FindPath(startPos, targetPos);
+            Debug.Log("Agent and target are in the same zone.");
             aStar.FindPath(startPos, targetPos);
             return;
         }
         //if not
-        //travel from start to start
-        Vector3 startTPos = FindThresholdCell(startPos);
+        //travel from startPos to 
+        Vector3 startTPos = FindThresholdCell(start);
+
+        /*
         aStar.FindPath(startPos, startTPos);
 
         //connect start zone threshold to target zone threshold
         ThresholdPath(startPos, targetPos);
-
+        
         //travel from target threshold to target
         Vector3 targetTPos = FindThresholdCell(targetPos);
         aStar.FindPath(targetTPos, targetPos);
+        */
 
     }
-
-
 
 }
