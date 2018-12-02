@@ -65,10 +65,12 @@ public class AStarAlgo : MonoBehaviour
     /* Find the path using the A* algo
      * Input: starting position of the agent and its target position
      */
-    public void FindPath(Vector3 startPos, Vector3 targetPos)
+    public List<Cell> FindPath(Vector3 startPos, Vector3 targetPos)
     {
         Cell startCell = map.CellFromWorldPos(startPos);
         Cell targetCell = map.CellFromWorldPos(targetPos);
+
+        List<Cell> foundPath = null;
 
         //keep track of which cells have have been visited
         List<Cell> openSet = new List<Cell>();
@@ -98,8 +100,8 @@ public class AStarAlgo : MonoBehaviour
             //check if we have already reached the goal
             if (currCell == targetCell)
             {
-                List<Cell> p = RetracePath(startCell, targetCell);
-                return;
+                foundPath = RetracePath(startCell, targetCell);
+                break;
             }
 
 
@@ -115,13 +117,13 @@ public class AStarAlgo : MonoBehaviour
                 }
 
                 //determine path based on gCost
-                int newCostToNeighbor = currCell.gCost + GetDistance(currCell, neighbor);
+                int newCostToNeighbor = currCell.gCost + GetDistance(currCell.worldPosition, neighbor.worldPosition);
                 if (newCostToNeighbor < neighbor.gCost || !openSet.Contains(neighbor))
                 {
 
                     //update this cell with the new costs
                     neighbor.gCost = newCostToNeighbor;
-                    neighbor.hCost = GetDistance(neighbor, targetCell);
+                    neighbor.hCost = GetDistance(neighbor.worldPosition, targetCell.worldPosition);
                     //change the parent of the neighbor
                     neighbor.parent = currCell;
 
@@ -133,12 +135,101 @@ public class AStarAlgo : MonoBehaviour
                 }
             }
         }
+
+        //done, return the path found
+        return foundPath;
     }
 
 
-    //get distance between two cells 
-    int GetDistance(Cell cellA, Cell cellB)
+
+    /* Like the function above, but on the threshold graph rather than the entire 2d grid
+     */
+    public List<Threshold> FindPathT(Threshold startThreshold, Threshold targetThreshold)
     {
+
+
+        List<Threshold> foundPath = null;
+
+        //keep track of which threhsholds have have been visited
+        List<Threshold> openSet = new List<Threshold>();
+        HashSet<Threshold> closedSet = new HashSet<Threshold>();
+        //List<Cell> openSet = new List<Cell>();
+        //HashSet<Cell> closedSet = new HashSet<Cell>();
+
+        openSet.Add(startThreshold);
+
+        while (openSet.Count > 0)
+        {
+            Threshold currCell = openSet[0];
+            for (int i = 1; i < openSet.Count; i++)
+            {
+                //choose which cell to look at
+                if (openSet[i].fCost < currCell.fCost || (openSet[i].fCost == currCell.fCost && openSet[i].hCost < currCell.hCost))
+                {
+
+                    currCell = openSet[i];
+                }
+            }
+
+
+            //update both sets
+            openSet.Remove(currCell);
+            closedSet.Add(currCell);
+
+
+            //check if we have already reached the goal
+            if (currCell == targetThreshold)
+            {
+                //foundPath = RetracePath(startCell, targetCell);
+                break;
+            }
+
+
+            //if we have yet to reach the goal, look at the cell's neighbors
+            foreach (ThresholdEdge e in currCell.tedgesToNeighbors)
+            {
+
+                Threshold neighbor = e.incident;
+                //if this neighbor is unwalkable (should not be) or if we already visited this cell
+                if (!neighbor.isWalkable || closedSet.Contains(neighbor))
+                {
+                    continue;
+                }
+
+                //determine path based on gCost
+                int newCostToNeighbor = currCell.gCost + GetDistance(currCell.worldPosition, neighbor.worldPosition);
+                if (newCostToNeighbor < neighbor.gCost || !openSet.Contains(neighbor))
+                {
+
+                    //update this cell with the new costs
+                    neighbor.gCost = newCostToNeighbor;
+                    neighbor.hCost = GetDistance(neighbor.worldPosition, targetThreshold.worldPosition);
+                    //change the parent of the neighbor
+                    neighbor.tparent = currCell;
+
+                    if (!openSet.Contains(neighbor))
+                    {
+                        //add this neighboring cell to the open set
+                        openSet.Add(neighbor);
+                    }
+                }
+            }
+        }
+
+        //done, return the path found
+        return foundPath;
+    }
+
+
+
+    //CHANGE SO THAT WE'RE PASSING WORLD COORDINATES?
+
+    //get distance between two cells 
+    int GetDistance(Vector3 positionA, Vector3 positionB)
+    {
+        Cell cellA = map.CellFromWorldPos(positionA);
+        Cell cellB = map.CellFromWorldPos(positionB);
+
         int dstX = Mathf.Abs(cellA.gridPositionX - cellB.gridPositionX);
         int dstZ = Mathf.Abs(cellA.gridPositionZ - cellB.gridPositionZ);
 
@@ -168,6 +259,23 @@ public class AStarAlgo : MonoBehaviour
         return path;
     }
 
+
+    /* Same as above, but for threshold cell
+     */
+    public List<Threshold> RetracePathT(Threshold start, Threshold end)
+    {
+        List<Threshold> path = new List<Threshold>();
+        Threshold currentCell = end;
+        while (currentCell != start)
+        {
+            path.Add(currentCell);
+            currentCell = currentCell.tparent;
+        }
+
+        path.Reverse();
+        return path;
+    }
+
     //returns the found path
     /*
     public List<Cell> RetrievesPath(Cell start, Cell end)
@@ -187,7 +295,7 @@ public class AStarAlgo : MonoBehaviour
     */
 
 
-    
+
     private void OnDrawGizmos()
     {
         if (path != null)

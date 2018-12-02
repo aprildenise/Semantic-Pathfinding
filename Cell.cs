@@ -59,7 +59,7 @@ public class Cell{
     }
 
 
-    /* Assign the given list of edges and neighbors to this cell. Change later
+    /* Assign the given list of edges and neighbors to this cell.
      */
     public void AssignNeighbors(List<Edge> n)
     {

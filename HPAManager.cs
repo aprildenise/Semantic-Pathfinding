@@ -133,51 +133,82 @@ public class HPAManager : MonoBehaviour {
     */
 
     //cleaner version of hte cod above
+    /* Given an agent's position and its goal position, find the path the
+     * agent must take in terms of the threshold graph
+     * Input: starting position, goal position
+     * Output: !!SHOULD BE THE PATH !!
+     */
     void ThresholdPath(Vector3 startPos, Vector3 targetPos)
     {
-       
+
         //Finding starting and ending thresholds
-        Vector3 startThreshold = FindThresholdCell(startPos);
-        Vector3 targetThreshold = FindThresholdCell(targetPos);
+        //Vector3 startThreshold = FindThresholdCell(startPos);
+        //Vector3 targetThreshold = FindThresholdCell(targetPos);
+
+        //find the threshold we have to start at and the threshold we have to reach to get to the goal
+        Threshold startThreshold = FindThresholdCell(startPos);
+        Threshold goalThreshold = FindThresholdCell(targetPos);
 
         //Finding Path
-        aStar.FindPath(startThreshold, targetThreshold);
+        Vector3 startingPosition = startThreshold.worldPosition;
+        Vector3 goalPosition = goalThreshold.worldPosition;
+        aStar.FindPathT(startingPosition, goalPosition);
 
         //Search the zones between thresholds in the found threshold path
         
-        //List<Cell> thresholdPath = aStar.retrievesPath(startThreshold, targetThreshold);
-        //for (int i = 0; i < thresholdPath.Count - 1; i++)
-        //{
-        //    //find the path of the zones
-        //    aStar.FindPath(thresholdPath[i].worldPosition, thresholdPath[i + 1].worldPosition);
-        //}
+        /*
+        List<Cell> thresholdPath = aStar.RetracePathT(startThreshold, targetThreshold);
+        for (int i = 0; i < thresholdPath.Count - 1; i++)
+        {
+            //find the path of the zones
+            aStar.FindPath(thresholdPath[i].worldPosition, thresholdPath[i + 1].worldPosition);
+        }
+        */
 
     }
+    
 
 
 
     /* Given a position, find the closest threshold to that position
-     * Input: starting position 
-     * Output: position of the chosen threshold
+     * Input: starting position and goal position
+     * Output: the closest threshold
      */
-    private Vector3 FindThresholdCell(Cell c)
+    private Threshold FindThresholdCell(Vector3 start)
     {
-  
-        //define start and goal zones
+
         //find the zone that belongs to this cell to get its thresholds
-        Zone Z = zm.GetZone(c.zoneId);
+        Cell startingCell = m.CellFromWorldPos(start);
+        //Cell goalCell = m.CellFromWorldPos(goal);
+        Zone Z = zm.GetZone(startingCell.zoneId);
 
         //distance tracker
         int shortestDist = 2147483647; //holding value
 
 
         //traverse the threshold graph to find the appropriate threshold
-        Cell cThreshold = null;
+        Threshold cThreshold = null;
         for (int i = 0; i < Z.thresholds.Count; i++)
         {
 
-            //find the closest threshold. this is the post approriate threshold
+            //find the closest threshold to the agent and to the goal. this is the most approriate threshold
             Threshold t = Z.thresholds[i];
+            
+            //Debug.Log("This threshold is at:" + t.worldPosition);
+            int tempDist = (int)Vector3.Distance(t.worldPosition, startingCell.worldPosition);
+            if (tempDist <= shortestDist)
+            {
+                cThreshold = t;
+                shortestDist = tempDist;
+            }
+            else
+            {
+                continue;
+            }
+            
+
+
+            /*
             foreach (Edge e in t.edgesToNeighbors)
             {
                 Cell neighbor = e.incident; //new code
@@ -197,15 +228,19 @@ public class HPAManager : MonoBehaviour {
                     continue;
                 }
             }
+            */
+            
             
 
         }
-        return cThreshold.worldPosition;
+        return cThreshold;
     }
 
     //calculate distance between two cells
     int GetDistance(Cell cellA, Cell cellB)
     {
+
+
         int dstX = Mathf.Abs(cellA.gridPositionX - cellB.gridPositionX);
         int dstZ = Mathf.Abs(cellA.gridPositionZ - cellB.gridPositionZ);
 
@@ -215,12 +250,18 @@ public class HPAManager : MonoBehaviour {
     }
 
 
+
+    /* Given the position of the agent and its goal, use the hpa algo
+     * to find a path from the agent to the goal
+     * Input: starting position, ending position
+     * Output: !!SHOULD BE THE PATH FOUND!!
+     */
     public void HPAFindPath(Vector3 startPos, Vector3 targetPos)
     {
         Cell start = m.CellFromWorldPos(startPos);
         Cell target = m.CellFromWorldPos(targetPos);
 
-        //check if target and start are inthe same zone
+        //check if target and start are in the same zone
         //If yes run A*
         if (start.zoneId == target.zoneId)
         {
@@ -229,19 +270,21 @@ public class HPAManager : MonoBehaviour {
             return;
         }
         //if not
-        //travel from startPos to 
-        Vector3 startTPos = FindThresholdCell(start);
-
-        /*
+        //travel from the starting position to the appropriate threshold first
+        Threshold startT = FindThresholdCell(startPos);
+        Vector3 startTPos = startT.worldPosition;
         aStar.FindPath(startPos, startTPos);
 
+        //then, search the graph of thresholds to find which zones to go through
         //connect start zone threshold to target zone threshold
         ThresholdPath(startPos, targetPos);
         
         //travel from target threshold to target
+        /*
         Vector3 targetTPos = FindThresholdCell(targetPos);
         aStar.FindPath(targetTPos, targetPos);
         */
+
 
     }
 

@@ -40,7 +40,7 @@ public class Map : MonoBehaviour
         DefineZones();
         FindThresholds();
         AddThresholdsToZone();
-        //CreateImage();
+        CreateImage();
     }
 
 
@@ -155,7 +155,7 @@ public class Map : MonoBehaviour
             int id = z.zoneId;
             for (int i = topLeftCell.gridPositionZ; i < bottomLeftCell.gridPositionZ; i++)
             {
-                for (int j = topLeftCell.gridPositionX; j < topRightCell.gridPositionX - 1; j++)
+                for (int j = topLeftCell.gridPositionX; j < topRightCell.gridPositionX; j++)
                 {
                     grid[i, j].zoneId = id;
                 }
@@ -235,6 +235,10 @@ public class Map : MonoBehaviour
                 {
                     if (!c.threshold && !cell.threshold)
                     {
+                        if (c.zoneId == -1)
+                        {
+                            //Debug.Log("Yikes! this id is -1! It is at:" + c.worldPosition);
+                        }
                         c.threshold = true;
                         Threshold t = new Threshold(cell.zoneId, c.zoneId, c.worldPosition, c.gridPositionX, c.gridPositionZ, c.cellSize);
                         thresholdsList.Add(t);
@@ -270,7 +274,7 @@ public class Map : MonoBehaviour
         {
 
             Threshold threshold = thresholdsList[i];
-            List<Edge> possibleNeighbors = new List<Edge>();
+            List<ThresholdEdge> possibleNeighbors = new List<ThresholdEdge>();
 
             for (int j = 0; j < thresholdsList.Count; j++)
             {
@@ -300,7 +304,7 @@ public class Map : MonoBehaviour
                     }
 
                     float weight = Vector3.Distance(thresholdsList[i].worldPosition, thresholdsList[j].worldPosition);
-                    Edge e = new Edge(thresholdsList[i], thresholdsList[j], weight);
+                    ThresholdEdge e = new ThresholdEdge(thresholdsList[i], thresholdsList[j], weight);
                     if (!possibleNeighbors.Contains(e))
                     {
                         possibleNeighbors.Add(e);
@@ -309,7 +313,7 @@ public class Map : MonoBehaviour
             }
 
             //done looking at this threshold. add all found neighbors to the threshold cell
-            threshold.AssignNeighbors(possibleNeighbors);
+            threshold.TAssignNeighbors(possibleNeighbors);
 
         }
 
@@ -330,6 +334,7 @@ public class Map : MonoBehaviour
             if (id == -1)
             {
                 //some weird edge case. !!WE  WILL HAVE TO INVESTIGATE!!
+                //Debug.Log("This threshold has -1 id:" + t.worldPosition);
                 continue; 
             }
             Zone z = zm.GetZone(id);
@@ -475,7 +480,6 @@ public class Map : MonoBehaviour
     private void CreateImage()
     {
         Image<Bgr, Byte> img = new Image<Bgr, byte>(gridWidth, gridHeight);
-        int temp = 0;
         for (int i = 0; i < gridHeight; i++)
         {
             for (int j = 0; j < gridWidth; j++)
@@ -487,7 +491,6 @@ public class Map : MonoBehaviour
                 else if (grid[i, j].threshold)
                 {
                     img[i, j] = new Bgr(255, 0, 0);
-                    temp++;
                 }
                 else
                 {
@@ -495,7 +498,6 @@ public class Map : MonoBehaviour
                 }
             }
         }
-        Debug.Log("temp:" + temp);
 
 
         //Size newSize = new Size(gridWidth * 2, gridHeight * 2);
