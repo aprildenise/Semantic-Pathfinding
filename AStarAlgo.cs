@@ -12,7 +12,10 @@ public class AStarAlgo : MonoBehaviour
     private Transform agent;
     private Transform target;
 
+
+    //temporary
     public List<Cell> path;
+    public List<Threshold> tpath;
 
     //temp
     //List<Cell> things;
@@ -123,7 +126,7 @@ public class AStarAlgo : MonoBehaviour
 
                     //update this cell with the new costs
                     neighbor.gCost = newCostToNeighbor;
-                    neighbor.hCost = GetDistance(neighbor.worldPosition, targetCell.worldPosition);
+                    neighbor.hCost = newCostToNeighbor + GetDistance(neighbor.worldPosition, targetCell.worldPosition);
                     //change the parent of the neighbor
                     neighbor.parent = currCell;
 
@@ -180,7 +183,7 @@ public class AStarAlgo : MonoBehaviour
             //check if we have already reached the goal
             if (currCell == targetThreshold)
             {
-                //foundPath = RetracePath(startCell, targetCell);
+                foundPath = RetracePathT(startThreshold, targetThreshold);
                 break;
             }
 
@@ -203,7 +206,7 @@ public class AStarAlgo : MonoBehaviour
 
                     //update this cell with the new costs
                     neighbor.gCost = newCostToNeighbor;
-                    neighbor.hCost = GetDistance(neighbor.worldPosition, targetThreshold.worldPosition);
+                    neighbor.hCost = newCostToNeighbor + GetDistance(neighbor.worldPosition, targetThreshold.worldPosition);
                     //change the parent of the neighbor
                     neighbor.tparent = currCell;
 
@@ -254,6 +257,7 @@ public class AStarAlgo : MonoBehaviour
             currentCell = currentCell.parent;
         }
 
+        path.Add(start);
         path.Reverse();
         this.path = path;
         return path;
@@ -271,8 +275,9 @@ public class AStarAlgo : MonoBehaviour
             path.Add(currentCell);
             currentCell = currentCell.tparent;
         }
-
+        path.Add(start);
         path.Reverse();
+        tpath = path;
         return path;
     }
 
@@ -295,7 +300,7 @@ public class AStarAlgo : MonoBehaviour
     */
 
 
-
+    /*
     private void OnDrawGizmos()
     {
         if (path != null)
@@ -308,7 +313,19 @@ public class AStarAlgo : MonoBehaviour
                 Gizmos.DrawCube(center, new Vector3(c.cellSize, c.cellSize, c.cellSize));
             }
         }
+
+        if (tpath != null)
+        {
+            foreach (Threshold c in tpath)
+            {
+                Vector3 increment = new Vector3(c.cellSize / 2f, 0, -1f * c.cellSize / 2f);
+                Vector3 center = c.worldPosition + increment;
+                Gizmos.color = Color.blue;
+                Gizmos.DrawCube(center, new Vector3(c.cellSize, c.cellSize, c.cellSize));
+            }
+        }
     }
+    */
     
 
 }

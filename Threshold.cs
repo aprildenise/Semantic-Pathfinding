@@ -7,7 +7,7 @@ public class Threshold : Cell{
     
     public int tzoneID; //zoneid belonging to this threshold. this is the zoneID that this threshold is connecting
     public List<ThresholdEdge> tedgesToNeighbors;
-    public Threshold tparent;
+    public Threshold tparent; //temporary
 
 
     //Constructor 

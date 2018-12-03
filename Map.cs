@@ -40,7 +40,7 @@ public class Map : MonoBehaviour
         DefineZones();
         FindThresholds();
         AddThresholdsToZone();
-        CreateImage();
+        //CreateImage();
     }
 
 
@@ -387,7 +387,7 @@ public class Map : MonoBehaviour
 
 
 
-    //for debugging and testing only. used to draw the cell grid
+    ////for debugging and testing only. used to draw the cell grid
 
     public void OnDrawGizmos()
     {
@@ -411,7 +411,7 @@ public class Map : MonoBehaviour
                     }
                     else if (!c.isWalkable)
                     {
-                        Gizmos.color = UnityEngine.Color.red;
+                        //Gizmos.color = UnityEngine.Color.red;
                     }
 
 
