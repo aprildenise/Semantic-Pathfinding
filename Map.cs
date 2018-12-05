@@ -12,11 +12,11 @@ public class Map : MonoBehaviour
 {
 
     //globals
-    private int mapWidth;
-    private int mapHeight;
-    private int gridWidth; //number of cells across
-    private int gridHeight; //number of cells down
-    private Vector3 topLeftPos; //world position of the top left corner of the map
+    public int mapWidth;
+    public int mapHeight;
+    public int gridWidth; //number of cells across
+    public int gridHeight; //number of cells down
+    public Vector3 topLeftPos; //world position of the top left corner of the map
 
     public Cell[,] grid; //2d grid of cells that cover the map
     public List<Threshold> thresholdGraph;
@@ -47,9 +47,10 @@ public class Map : MonoBehaviour
 
     /* Determine the entire size of the map using the corners of the map
     */
-    private void GetMapDimensions()
+    public void GetMapDimensions()
     {
         //use the Renderers of the corners to find where they are in world coordinates
+
         float approxLeft = (topLeft.bounds.center.x - (topLeft.bounds.size.x / 2));
         float approxRight = (topRight.bounds.center.x + (topRight.bounds.size.x / 2));
         float approxBottom = (bottomRight.bounds.center.z - (bottomRight.bounds.size.z / 2));
@@ -67,7 +68,7 @@ public class Map : MonoBehaviour
     /* Build a 2d grid of cells that cover the entire map
      * Input: size of the cell in respect to world coordinates
      */
-    private void BuildCellGrid(float cellSize)
+    public void BuildCellGrid(float cellSize)
     {
 
         //calculate how many cells we can fit across the map
@@ -139,7 +140,7 @@ public class Map : MonoBehaviour
     /* Given a list of zones, find all the cells that belong to that zone
      * and assign them to that zone
      */
-    private void DefineZones()
+    public void DefineZones()
     {
         List<Zone> zones = zm.InitZones();
         foreach (Zone z in zones)
@@ -167,7 +168,7 @@ public class Map : MonoBehaviour
 
     /* Within each zone, find the thresholds that connect two different zones together
      */
-    private void FindThresholds()
+    public void FindThresholds()
     {
 
         //table to see if we have visited a cell
@@ -207,7 +208,7 @@ public class Map : MonoBehaviour
      * Input: visited array for traversing, starting cell, list where thresholds will be places
      * Output: list of thresholds that were found
      */
-    private List<Threshold> FindThresholdSearch(bool[,] visited, Cell start, List<Threshold> thresholdsList)
+    public List<Threshold> FindThresholdSearch(bool[,] visited, Cell start, List<Threshold> thresholdsList)
     {
         Queue<Cell> s = new Queue<Cell>();
         s.Enqueue(start);
@@ -266,7 +267,7 @@ public class Map : MonoBehaviour
      * Also assign thresholds to their respective zones
      * Input: threshold graph
      */
-    private void BuildThresholdGraph(List<Threshold> thresholdsList)
+    public void BuildThresholdGraph(List<Threshold> thresholdsList)
     {
         //look at all the thresholds in the list. 
         //If threshold A and B have zones in common, then connect them
@@ -324,7 +325,7 @@ public class Map : MonoBehaviour
 
     /* Given the threshold list, assign to each zone the thresholds that belong to its zone
      */
-    private void AddThresholdsToZone()
+    public void AddThresholdsToZone()
     {
         List<Threshold> thresholdList = thresholdGraph;
         //iterate through the list to find the zones the thresholds belong to
@@ -389,72 +390,72 @@ public class Map : MonoBehaviour
 
     ////for debugging and testing only. used to draw the cell grid
 
-    public void OnDrawGizmos()
-    {
+    //public void OnDrawGizmos()
+    //{
 
-        if (grid != null)
-        {
-            for (int i = 0; i < gridWidth; i++)
-            {
-                for (int j = 0; j < gridHeight; j++)
-                {
-                    Cell c = grid[j, i];
+    //    if (grid != null)
+    //    {
+    //        for (int i = 0; i < gridWidth; i++)
+    //        {
+    //            for (int j = 0; j < gridHeight; j++)
+    //            {
+    //                Cell c = grid[j, i];
 
-                    //uncomment to see thresholds and iswalkables
-                    if (c.isWalkable && !c.threshold)
-                    {
-                        Gizmos.color = UnityEngine.Color.clear;
-                    }
-                    else if (c.isWalkable && c.threshold)
-                    {
-                        Gizmos.color = UnityEngine.Color.blue;
-                    }
-                    else if (!c.isWalkable)
-                    {
-                        //Gizmos.color = UnityEngine.Color.red;
-                    }
-
-
+    //                //uncomment to see thresholds and iswalkables
+    //                if (c.isWalkable && !c.threshold)
+    //                {
+    //                    Gizmos.color = UnityEngine.Color.clear;
+    //                }
+    //                else if (c.isWalkable && c.threshold)
+    //                {
+    //                    Gizmos.color = UnityEngine.Color.blue;
+    //                }
+    //                else if (!c.isWalkable)
+    //                {
+    //                    //Gizmos.color = UnityEngine.Color.red;
+    //                }
 
 
-                    //another way to draw the zones
-                    /*
-                    int temp = c.zoneId % 5;
-                    if (temp == 0)
-                    {
-                        Gizmos.color = Color.yellow;
-                    }
-                    else if (temp == 1)
-                    {
-                        Gizmos.color = Color.blue;
-                    }
-                    else if (temp == 2)
-                    {
-                        Gizmos.color = Color.magenta;
-                    }
-                    else if (temp == 3)
-                    {
-                        Gizmos.color = Color.cyan;
-                    }
-                    else if (temp == 4)
-                    {
-                        Gizmos.color = Color.grey;
-                    }
-                    else
-                    {
-                        Gizmos.color = Color.green;
-                    }
-                    */
 
 
-                    Vector3 increment = new Vector3(c.cellSize / 2f, 0, -1f * c.cellSize / 2f);
-                    Vector3 center = c.worldPosition + increment;
-                    Gizmos.DrawCube(center, new Vector3(c.cellSize, c.cellSize, c.cellSize));
-                }
-            }
+    //                //another way to draw the zones
+    //                /*
+    //                int temp = c.zoneId % 5;
+    //                if (temp == 0)
+    //                {
+    //                    Gizmos.color = Color.yellow;
+    //                }
+    //                else if (temp == 1)
+    //                {
+    //                    Gizmos.color = Color.blue;
+    //                }
+    //                else if (temp == 2)
+    //                {
+    //                    Gizmos.color = Color.magenta;
+    //                }
+    //                else if (temp == 3)
+    //                {
+    //                    Gizmos.color = Color.cyan;
+    //                }
+    //                else if (temp == 4)
+    //                {
+    //                    Gizmos.color = Color.grey;
+    //                }
+    //                else
+    //                {
+    //                    Gizmos.color = Color.green;
+    //                }
+    //                */
 
-        }
-    }
+
+    //                Vector3 increment = new Vector3(c.cellSize / 2f, 0, -1f * c.cellSize / 2f);
+    //                Vector3 center = c.worldPosition + increment;
+    //                Gizmos.DrawCube(center, new Vector3(c.cellSize, c.cellSize, c.cellSize));
+    //            }
+    //        }
+
+    //    }
+    //}
 
 
     /*
