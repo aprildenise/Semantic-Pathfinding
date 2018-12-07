@@ -54,7 +54,11 @@ public class Zone{
         {
             thresholds = new List<Threshold>();
         }
-        thresholds.Add(t);
+
+        if (!thresholds.Contains(t)){
+            thresholds.Add(t);
+        }
+        
     }
 
 

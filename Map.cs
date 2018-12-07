@@ -12,11 +12,11 @@ public class Map : MonoBehaviour
 {
 
     //globals
-    public int mapWidth;
-    public int mapHeight;
-    public int gridWidth; //number of cells across
-    public int gridHeight; //number of cells down
-    public Vector3 topLeftPos; //world position of the top left corner of the map
+    private int mapWidth;
+    private int mapHeight;
+    private int gridWidth; //number of cells across
+    private int gridHeight; //number of cells down
+    private Vector3 topLeftPos; //world position of the top left corner of the map
 
     public Cell[,] grid; //2d grid of cells that cover the map
     public List<Threshold> thresholdGraph;
@@ -29,6 +29,10 @@ public class Map : MonoBehaviour
     public Renderer topRight;
     public Renderer bottomRight;
 
+
+    private void Awake(){
+        InitMap();
+    }
 
     /* Initialize the map. This includes: 
      * initializing the cell grid, defining zones, finding thresholds, building the threshold map
@@ -341,6 +345,18 @@ public class Map : MonoBehaviour
             Zone z = zm.GetZone(id);
             //add the threshold to the zone that the threshold is a part of 
             z.AddThresholdToZone(t);
+
+            //do the same for the zone this threshold is connected to
+            id = t.tzoneID;
+            if (id == -1)
+            {
+                //some weird edge case. !!WE  WILL HAVE TO INVESTIGATE!!
+                //Debug.Log("This threshold has -1 id:" + t.worldPosition);
+                continue; 
+            }
+            z = zm.GetZone(id);
+            //add the threshold to the zone that the threshold is a part of 
+            z.AddThresholdToZone(t);
         }
         
     }
@@ -384,6 +400,13 @@ public class Map : MonoBehaviour
 
 
         return grid[z, x];
+    }
+
+
+    public Zone GetZone(int id)
+    {
+        Zone z = zm.zones[id];
+        return z;
     }
 
 
@@ -456,23 +479,6 @@ public class Map : MonoBehaviour
 
     //    }
     //}
-
-
-    /*
-    public List<Cell> getNeighbor(Cell cell)
-    {
-        List<Cell> neighbor = new List<Cell>();
-        List<Edge> e = cell.edgesToNeighbors;
-        for (int i = 0; i < e.Count; i++)
-        {
-            if (e[i].isActive)
-            {
-                neighbor.Add(e[i].incident);
-            }
-        }
-        return neighbor;
-    }
-    */
 
 
     /* Color zones, thresholds, and obstacles on an EMGU image

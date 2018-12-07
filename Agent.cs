@@ -8,81 +8,123 @@ public class Agent: MonoBehaviour{
     public Map map;
 
     //for pathfinding
-    public Dictionary<Cell, Cell> cameFrom = new Dictionary<Cell, Cell>();
-    public Dictionary<Cell, int> costSoFar = new Dictionary<Cell, int>();
-    public Dictionary<Threshold, Threshold> tcameFrom = new Dictionary<Threshold, Threshold>();
-    public Dictionary<Threshold, int> tcostSoFar = new Dictionary<Threshold, int>();
-    public List<Cell> pathToTake; 
-    public List<Threshold> tpathToTake;
+    private Dictionary<Cell, Cell> cameFrom;
+    private Dictionary<Cell, float> costSoFar;
+    private Dictionary<Threshold, Threshold> tcameFrom;
+    private Dictionary<Threshold, float> tcostSoFar;
+    private List<Cell> pathToTake; 
+    private List<Threshold> tpathToTake; //temp
+    private bool pathFound;
 
     //temporary
     public Transform goal;
-    public Transform agent; 
-    
+    //public Transform agent;
+
 
     //signals to update or pause pathfinding
-    public bool isPaused;
-    public bool isStopped;
-    public bool isRefreshed;
-    public float rate;
+    private bool isHalted = false;
+    private bool isRefreshed = false;
+    private int updateRate = 0;
+
+    //for movement
+    public float moveSpeed;
+    private int stepsTaken = 0; //aka cell in the pathToTake list
+    private float Timer;
+    private Vector3 nextCell;
 
 
     void Start(){
-        map.InitMap();
-        agent = gameObject.GetComponent<Transform>();
-        HPAAlt(agent.position, goal.position);
+        pathToTake = FindHPAPath(transform.position, goal.position);
     }
 
+    void RestartPath()
+    {
+        pathToTake = null;
+        tpathToTake = null;
+        pathFound = false;
+    }
+
+    //for movement
     void LateUpdate(){
-        
+        if (pathFound && !isHalted)
+        {
+            Timer += Time.deltaTime * moveSpeed;
+            nextCell = pathToTake[stepsTaken].worldPosition;
+            if (transform.position != nextCell)
+            {
+                transform.position = Vector3.Lerp(transform.position, nextCell, Timer);
+            }
+            else
+            {
+                if (stepsTaken < pathToTake.Count - 1)
+                {
+                    stepsTaken++;
+                    CheckCell();
+                }
+            }
+        }
     }
 
-    //copy and pasted algorithms
-    /* An alternate implementation for hpa
- */
-    public List<Cell> HPAAlt(Vector3 start, Vector3 goal)
+    private void CheckCell()
+    {
+        Timer = 0;
+        nextCell = pathToTake[stepsTaken].worldPosition;
+    }
+
+
+    public void HaltAgent(bool status)
+    {
+        isHalted = status;
+    }
+
+    /* An implementation for hpa
+    */
+    public List<Cell> FindHPAPath(Vector3 start, Vector3 goal)
     {
         List<Cell> finalPath = new List<Cell>();
 
         //add the start position and the goal position to the threshold graph
         //by finding which threshold is close to the two positions
+        //Debug.Log("For start:");
         Threshold thresholdStart = FindNeartestThreshold(start, goal);
+        //Debug.Log("For goal:");
         Threshold thresholdGoal = FindNeartestThreshold(goal, start);
 
         //find a path of thresholds that exist starting from thresholdStart and to thresholdGoal
-        List<Threshold> thresholdPath = FindPathT(thresholdStart, thresholdGoal);
+        List<Threshold> thresholdPath = FindThresholdPath(thresholdStart, thresholdGoal);
+        tpathToTake = thresholdPath;
 
         //using all these thresholds, find a path to the goal from the start with the help of astar
-        //first node
-        finalPath.Add(map.CellFromWorldPos(start));
         //start to first threshold
-        List<Cell> temp = FindPath(start, thresholdStart.worldPosition);
+        List<Cell> temp = FindCellPath(start, thresholdStart.worldPosition);
         finalPath.AddRange(temp);
         //between thresholds 
         for (int i = 1; i < thresholdPath.Count; i++)
         {
+            Debug.Log("Iteration:" + i);
             //get the last position from the final path, this will be the new "start"
             Vector3 newStart = thresholdPath[i - 1].worldPosition;
             //the threshold will be the new goal
             Vector3 newGoal = thresholdPath[i].worldPosition;
-            temp = FindPath(newStart, newGoal);
+            temp = FindCellPath(newStart, newGoal);
 
             //add this path to the finalpath
             finalPath.AddRange(temp);
 
         }
         //final threshold to the end
-        temp = FindPath(thresholdPath[thresholdPath.Count - 1].worldPosition, goal);
+        temp = FindCellPath(thresholdPath[thresholdPath.Count - 1].worldPosition, goal);
         finalPath.AddRange(temp);
 
         //done
         pathToTake = finalPath; //temp
+        pathFound = true;
         return finalPath;
 
 
     }
 
-        /* Given a position, find the threshold that is near to both the beginning
+    /* Given a position, find the threshold that is near to both the beginning
      * position and the goal position
      * Input: position in question, goal position
      * Output: threshold that is nearest to those positions
@@ -93,11 +135,31 @@ public class Agent: MonoBehaviour{
         Threshold threshold = null;
 
         //find the zone that the starting position belongs to
-        Cell cell = map.CellFromWorldPos(position);
+        Cell currentCell = map.CellFromWorldPos(position);
+        Cell goalCell = map.CellFromWorldPos(goal);
 
-        //traverse through the threshold graph to find the appropriate threshold
-        //the appropriate threshold is:
-        //in the same zone as or around the cell, and close to the goal (if possible)
+        //get the thresholds list from the zone that has this cell
+        int id = currentCell.zoneId;
+        Zone zone = map.GetZone(id);
+
+        //find the threshold that is closest to the goal
+        float cost = Mathf.Infinity;
+        int i = 0;
+        foreach (Threshold t in zone.thresholds){
+            float temp = GetCellCost(goalCell, t) + GetCellCost(currentCell, t);
+            if (temp <= cost){
+                
+                cost = temp;
+                threshold = t;
+                //Debug.Log("A potential threshold! It is :" + threshold.worldPosition + " at the distance of:" + temp + " at: " + i);
+                i++;
+            }
+        }
+
+        return threshold;
+
+
+        /*
         float distanceFromPosition = Mathf.Infinity;
         foreach (Threshold t in map.thresholdGraph)
         {
@@ -108,7 +170,6 @@ public class Agent: MonoBehaviour{
             {
                 //this threshold is in or connected with the same zone as the current position
                 //we know it is close to the starting position
-
                 //see if this threshold is close to the goal
                 float distance = Vector3.Distance(t.worldPosition, goal);
                 if (distance <= distanceFromPosition)
@@ -119,270 +180,176 @@ public class Agent: MonoBehaviour{
                 }
             }
         }
-
-        return threshold;
+        */
     }
 
 
-       /* Find the path using the A* algo
-     * Input: starting position of the agent and its target position
-     */
-    public List<Cell> FindPath(Vector3 startPos, Vector3 targetPos)
-    {
+    //new code for the astar algorithm
+    public List<Cell> FindCellPath (Vector3 startPos, Vector3 goalPos){
+        
         Cell startCell = map.CellFromWorldPos(startPos);
-        Cell targetCell = map.CellFromWorldPos(targetPos);
+        Cell goalCell = map.CellFromWorldPos(goalPos);
+        PriorityQueue<Cell> frontier = new PriorityQueue<Cell>();
+        cameFrom = new Dictionary<Cell, Cell>();
+        costSoFar = new Dictionary<Cell, float>();
+        List<Cell> path = null;
 
-        List<Cell> foundPath = null;
-
-        //keep track of which cells have have been visited
-        List<Cell> openSet = new List<Cell>();
-        HashSet<Cell> closedSet = new HashSet<Cell>();
-        Dictionary<Cell, int> hcostSoFar = new Dictionary<Cell, int>();
+        frontier.Enqueue(startCell, 0);
         cameFrom[startCell] = startCell;
         costSoFar[startCell] = 0;
 
-        openSet.Add(startCell);
+        while (frontier.Count() > 0){
+            Cell current = frontier.Deqeueue();
 
-        while (openSet.Count > 0)
-        {
-            Cell currCell = openSet[0];
-            for (int i = 1; i < openSet.Count; i++)
-            {
-                //choose which cell to look at
-                Cell openCell = openSet[i];
-                int openfCost = costSoFar[openCell] + hcostSoFar[openCell];
-                int currfCost = costSoFar[currCell] + hcostSoFar[currCell];
-                if (openfCost < currfCost || (openfCost == currfCost && hcostSoFar[openCell] < hcostSoFar[currCell]))
-                {
-
-                    currCell = openSet[i];
-                }
+            if (current.Equals(goalCell)){
+                Debug.Log("A path has been found!");
+                path = RetraceCellPath(startCell, goalCell);
+                return path;
             }
 
+            foreach(Edge e in current.edgesToNeighbors){
+                Cell neighbor = e.incident;
 
-            //update both sets
-            openSet.Remove(currCell);
-            closedSet.Add(currCell);
-
-
-            //check if we have already reached the goal
-            if (currCell == targetCell)
-            {
-                foundPath = RetracePath(startCell, targetCell);
-                Debug.Log("path found in astar");
-                break;
-            }
-
-
-            //if we have yet to reach the goal, look at the cell's neighbors
-            foreach (Edge e in currCell.edgesToNeighbors)
-            {
-
-                Cell neighbor = e.incident; 
-                //if this neighbor is unwalkable (should not be) or if we already visited this cell
-                if (!neighbor.isWalkable || closedSet.Contains(neighbor))
-                {
-                    continue;
+                float newCost = costSoFar[current] + GetCellCost(current, neighbor);
+                if (!costSoFar.ContainsKey(neighbor) || newCost < costSoFar[neighbor]){
+                    costSoFar[neighbor] = newCost;
+                    float priority = newCost + GetCellHeuristic(neighbor, goalCell);
+                    frontier.Enqueue(neighbor, priority);
+                    cameFrom[neighbor] = current;
                 }
-
-                //determine path based on gCost
-                int newCostToNeighbor = (int)costSoFar[currCell] + (int)Vector3.Distance(currCell.worldPosition, neighbor.worldPosition);
-                
-                if (!costSoFar.ContainsKey(neighbor)){
-                                        //update this cell with the new costs
-                    //neighbor.gCost = newCostToNeighbor;
-                    costSoFar[neighbor] = newCostToNeighbor;
-                    int hCost = (int)newCostToNeighbor + (int)Vector3.Distance(neighbor.worldPosition, targetCell.worldPosition);
-                    hcostSoFar[neighbor] = hCost;
-                    //change the parent of the neighbor
-                    cameFrom[neighbor] = currCell;
-
-                    if (!openSet.Contains(neighbor))
-                    {
-                        //add this neighboring cell to the open set
-                        openSet.Add(neighbor);
-                    }
-                }
-
-                // if (newCostToNeighbor < costSoFar[neighbor] || !openSet.Contains(neighbor))
-                // {
-
-                //     //update this cell with the new costs
-                //     //neighbor.gCost = newCostToNeighbor;
-                //     costSoFar[neighbor] = newCostToNeighbor;
-                //     int hCost = (int)newCostToNeighbor + (int)Vector3.Distance(neighbor.worldPosition, targetCell.worldPosition);
-                //     hcostSoFar[neighbor] = hCost;
-                //     //change the parent of the neighbor
-                //     cameFrom[neighbor] = currCell;
-
-                //     if (!openSet.Contains(neighbor))
-                //     {
-                //         //add this neighboring cell to the open set
-                //         openSet.Add(neighbor);
-                //     }
-                // }
             }
         }
 
-        //done, return the path found
-        return foundPath;
+        Debug.Log("A path was not found...");
+        return path;
     }
 
 
-   /* Like the function above, but on the threshold graph rather than the entire 2d grid
-     */
-    public List<Threshold> FindPathT(Threshold startThreshold, Threshold targetThreshold)
+    private List<Cell> RetraceCellPath(Cell startCell, Cell goalCell){
+        
+        //loop through the cameFrom dictionary
+        List<Cell> path = new List<Cell>();
+        Cell currentCell = goalCell;
+        while (currentCell != startCell)
+        {
+            Debug.Log("Adding....");
+            path.Add(currentCell);
+            currentCell = cameFrom[currentCell];
+        }
+
+        path.Add(startCell);
+        path.Reverse();
+        return path;
+    }
+
+
+    public List<Threshold> FindThresholdPath(Threshold startThreshold, Threshold goalThreshold)
     {
 
+        PriorityQueue<Threshold> frontier = new PriorityQueue<Threshold>();
+        List<Threshold> path = null;
+        tcameFrom = new Dictionary<Threshold, Threshold>();
+        tcostSoFar = new Dictionary<Threshold, float>();
 
-        List<Threshold> foundPath = null;
-
-        //keep track of which threhsholds have have been visited
-        List<Threshold> openSet = new List<Threshold>();
-        HashSet<Threshold> closedSet = new HashSet<Threshold>();
-        Dictionary<Cell, int> hcostSoFar = new Dictionary<Cell, int>();
+        frontier.Enqueue(startThreshold, 0);
         tcameFrom[startThreshold] = startThreshold;
         tcostSoFar[startThreshold] = 0;
 
-        //List<Cell> openSet = new List<Cell>();
-        //HashSet<Cell> closedSet = new HashSet<Cell>();
-
-        openSet.Add(startThreshold);
-
-        while (openSet.Count > 0)
+        while (frontier.Count() > 0)
         {
-            Threshold currCell= openSet[0];
-            for (int i = 1; i < openSet.Count; i++)
+            Threshold current = frontier.Deqeueue();
+
+            if (current.Equals(goalThreshold))
             {
-                //choose which cell to look at
-                Threshold openCell = openSet[i];
-                int openfCost = tcostSoFar[openCell] + hcostSoFar[openCell];
-                int currfCost = tcostSoFar[currCell] + hcostSoFar[currCell];
-                if (openfCost < currfCost || (openfCost == currfCost && hcostSoFar[openCell] < hcostSoFar[currCell]))
-                {
-
-                    currCell = openSet[i];
-                }
-            }
-
-
-            //update both sets
-            openSet.Remove(currCell);
-            closedSet.Add(currCell);
-
-
-            //check if we have already reached the goal
-            if (currCell == targetThreshold)
-            {
-                foundPath = RetracePathT(startThreshold, targetThreshold);
-                Debug.Log("path found");
+                path = RetraceThresholdPath(startThreshold, goalThreshold);
                 break;
             }
 
-
-            //if we have yet to reach the goal, look at the cell's neighbors
-            foreach (ThresholdEdge e in currCell.tedgesToNeighbors)
+            foreach (ThresholdEdge e in current.tedgesToNeighbors)
             {
-
                 Threshold neighbor = e.incident;
-                //if this neighbor is unwalkable (should not be) or if we already visited this cell
-                if (!neighbor.isWalkable || closedSet.Contains(neighbor))
+
+                float newCost = tcostSoFar[current] + GetThresholdCost(current, neighbor);
+                if (!tcostSoFar.ContainsKey(neighbor) || newCost < tcostSoFar[neighbor])
                 {
-                    continue;
+                    tcostSoFar[neighbor] = newCost;
+                    float priority = newCost + GetThresholdHeuristic(neighbor, goalThreshold);
+                    frontier.Enqueue(neighbor, priority);
+                    tcameFrom[neighbor] = current;
                 }
-
-                 //determine path based on gCost
-                 
-                int newCostToNeighbor = (int)tcostSoFar[currCell] + (int)Vector3.Distance(currCell.worldPosition, neighbor.worldPosition);
-                
-                if (!tcostSoFar.ContainsKey(neighbor)){
-                                        //update this cell with the new costs
-                    //neighbor.gCost = newCostToNeighbor;
-                    tcostSoFar[neighbor] = newCostToNeighbor;
-                    int hCost = (int)newCostToNeighbor + (int)Vector3.Distance(neighbor.worldPosition, targetThreshold.worldPosition);
-                    hcostSoFar[neighbor] = hCost;
-                    //change the parent of the neighbor
-                    tcameFrom[neighbor] = currCell;
-
-                    if (!openSet.Contains(neighbor))
-                    {
-                        //add this neighboring cell to the open set
-                        openSet.Add(neighbor);
-                    }
-                }
-
-                // if (newCostToNeighbor < tcostSoFar[neighbor] || !openSet.Contains(neighbor))
-                // {
-
-                //     //update this cell with the new costs
-                //     //neighbor.gCost = newCostToNeighbor;
-                //     tcostSoFar[neighbor] = newCostToNeighbor;
-                //     int hCost = (int)newCostToNeighbor + (int)Vector3.Distance(neighbor.worldPosition, targetThreshold.worldPosition);
-                //     hcostSoFar[neighbor] = hCost;
-                //     //change the parent of the neighbor
-                //     tcameFrom[neighbor] = currCell;
-
-                //     if (!openSet.Contains(neighbor))
-                //     {
-                //         //add this neighboring cell to the open set
-                //         openSet.Add(neighbor);
-                //     }
-                // }
             }
         }
 
-        //done, return the path found
-        return foundPath;
-    }
-    
-    public List<Cell> RetracePath(Cell start, Cell end)
-    {
-        List<Cell> path = new List<Cell>();
-        Cell currentCell = end;
-        while (currentCell != start)
-        {
-            path.Add(currentCell);
-            currentCell = cameFrom[currentCell];
-            //currentCell = currentCell.parent;
-        }
-
-        path.Add(start);
-        path.Reverse();
-        this.pathToTake = path;
         return path;
     }
 
+
     
-    public List<Threshold> RetracePathT(Threshold start, Threshold end)
-    {
+    private List<Threshold> RetraceThresholdPath(Threshold startThreshold, Threshold goalThreshold){
+        
+        //loop through the cameFrom dictionary
         List<Threshold> path = new List<Threshold>();
-        Threshold currentCell = end;
-        while (currentCell != start)
+        Threshold current = goalThreshold;
+        while (current != startThreshold)
         {
-            path.Add(currentCell);
-            //currentCell = currentCell.tparent;
-            currentCell = tcameFrom[currentCell];
+            path.Add(current);
+            current = tcameFrom[current];
         }
-        path.Add(start);
+
+        path.Add(startThreshold);
         path.Reverse();
-        tpathToTake = path;
         return path;
     }
 
 
-    private void OnDrawGizmos()
-    {
-        if (pathToTake != null)
-        {
-            foreach (Cell c in pathToTake)
-            {
-                Vector3 increment = new Vector3(c.cellSize / 2f, 0, -1f * c.cellSize / 2f);
-                Vector3 center = c.worldPosition + increment;
-                Gizmos.color = Color.green;
-                Gizmos.DrawCube(center, new Vector3(c.cellSize, c.cellSize, c.cellSize));
-            }
-        }
+    private float GetCellCost(Cell source, Cell sink){
+        float cost = Vector3.Distance(source.worldPosition, sink.worldPosition);
+        return cost;
     }
+
+
+    private float GetCellHeuristic(Cell source, Cell sink){
+        float h = Vector3.Distance(source.worldPosition, sink.worldPosition);
+        return h;
+    }
+
+
+    
+    private float GetThresholdCost(Threshold source, Threshold sink){
+        float cost = Vector3.Distance(source.worldPosition, sink.worldPosition);
+        return cost;
+    }
+
+
+    private float GetThresholdHeuristic(Threshold source, Threshold sink){
+        float h = Vector3.Distance(source.worldPosition, sink.worldPosition);
+        return h;
+    }
+
+
+    //private void OnDrawGizmos()
+    //{
+    //    if (pathToTake != null)
+    //    {
+    //        foreach (Cell c in pathToTake)
+    //        {
+    //            Vector3 increment = new Vector3(c.cellSize / 2f, 0, -1f * c.cellSize / 2f);
+    //            Vector3 center = c.worldPosition + increment;
+    //            Gizmos.color = Color.green;
+    //            Gizmos.DrawCube(center, new Vector3(c.cellSize, c.cellSize, c.cellSize));
+    //        }
+    //    }
+    //    if (tpathToTake != null)
+    //    {
+    //        foreach (Threshold c in tpathToTake)
+    //        {
+    //            Vector3 increment = new Vector3(c.cellSize / 2f, 0, -1f * c.cellSize / 2f);
+    //            Vector3 center = c.worldPosition + increment;
+    //            Gizmos.color = Color.blue;
+    //            Gizmos.DrawCube(center, new Vector3(c.cellSize, c.cellSize, c.cellSize));
+    //        }
+    //    }
+    //}
 
 
 }

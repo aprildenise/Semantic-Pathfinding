@@ -144,7 +144,7 @@ public class HPAManager : MonoBehaviour
      * agent must take in terms of the threshold graph
      * Input: starting position, goal position
      * Output: !!SHOULD BE THE PATH !!
-     */
+
     void ThresholdPath(Vector3 startPos, Vector3 targetPos)
     {
 
@@ -154,9 +154,9 @@ public class HPAManager : MonoBehaviour
 
         //find the threshold we have to start at and the threshold we have to reach to get to the goal
         Threshold startThreshold = FindThresholdCell(startPos);
-        Debug.Log("ThresholdPath: start threshold found");
+        //Debug.Log("ThresholdPath: start threshold found");
         //Threshold goalThreshold = FindThresholdCell(targetPos);
-        Debug.Log("ThresholdPath: goal threshold found");
+        //Debug.Log("ThresholdPath: goal threshold found");
 
         //Finding Path
         //Vector3 startingPosition = startThreshold.worldPosition;
@@ -172,18 +172,18 @@ public class HPAManager : MonoBehaviour
             //find the path of the zones
             aStar.FindPath(thresholdPath[i].worldPosition, thresholdPath[i + 1].worldPosition);
         }
-        */
+
 
 
     }
-
+*/
 
 
 
     /* Given a position, find the closest threshold to that position
      * Input: starting position and goal position
      * Output: the closest threshold
-     */
+
     private Threshold FindThresholdCell(Vector3 start)
     {
 
@@ -241,7 +241,7 @@ public class HPAManager : MonoBehaviour
                     continue;
                 }
             }
-            */
+
 
 
 
@@ -249,7 +249,7 @@ public class HPAManager : MonoBehaviour
         }
         return cThreshold;
     }
-
+*/
     // //calculate distance between two cells
     // int GetDistance(Cell cellA, Cell cellB)
     // {
@@ -269,7 +269,7 @@ public class HPAManager : MonoBehaviour
      * to find a path from the agent to the goal
      * Input: starting position, ending position
      * Output: !!SHOULD BE THE PATH FOUND!!
-     */
+     
     public void HPAFindPath(Vector3 startPos, Vector3 targetPos)
     {
         Cell start = m.CellFromWorldPos(startPos);
@@ -297,11 +297,11 @@ public class HPAManager : MonoBehaviour
         /*
         Vector3 targetTPos = FindThresholdCell(targetPos);
         aStar.FindPath(targetTPos, targetPos);
-        */
+
 
 
     }
-
+    */
 
     /* An alternate implementation for hpa
      */
@@ -356,10 +356,15 @@ public class HPAManager : MonoBehaviour
 
     public Threshold FindNeartestThreshold(Vector3 position, Vector3 goal)
     {
+        Vector3 p = position;
+        Vector3 g = goal;
+
+
         Threshold threshold = null;
 
         //find the zone that the starting position belongs to
-        Cell cell = m.CellFromWorldPos(position);
+        Cell cell;
+        cell = m.CellFromWorldPos(p);
 
         //traverse through the threshold graph to find the appropriate threshold
         //the appropriate threshold is:
@@ -376,7 +381,7 @@ public class HPAManager : MonoBehaviour
                 //we know it is close to the starting position
 
                 //see if this threshold is close to the goal
-                float distance = Vector3.Distance(t.worldPosition, goal);
+                float distance = Vector3.Distance(t.worldPosition, g);
                 if (distance <= distanceFromPosition)
                 {
                     //we'll consider this to be the appropriate threshold

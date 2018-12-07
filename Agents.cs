@@ -16,6 +16,8 @@ public class Agents : MonoBehaviour {
     public Transform topRight;
     public Transform bottomRight;
 
+    public ZoneManager zm;
+
 
     // Use this for initialization
     void Start()
@@ -33,7 +35,7 @@ public class Agents : MonoBehaviour {
     public void initalizeMap()
     {
         Map mp = gameObject.AddComponent(typeof(Map)) as Map;
-        mp.zm = GameObject.Find("Zone_Manager").GetComponent<ZoneManager>();
+        mp.zm = GameObject.Find("ZoneManager").GetComponent<ZoneManager>();
         mp.topLeft = GameObject.Find("Object_480").GetComponent<Renderer>();
         mp.topRight = GameObject.Find("Object_444").GetComponent<Renderer>();
         mp.bottomRight = GameObject.Find("Object_182").GetComponent<Renderer>();

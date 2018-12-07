@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class AgentManager : MonoBehaviour {
-
+    /*
     private HPAManager HPA;
     public Map m;
     private AStarAlgo astar;
@@ -62,5 +62,6 @@ public class AgentManager : MonoBehaviour {
     {
         hCost.Add(id, h);
     }
+    */
 }
 
