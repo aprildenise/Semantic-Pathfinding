@@ -33,21 +33,21 @@ public class AStarAlgo : MonoBehaviour
         //FindPath(agent.position, target.position);
     }
 
-
+    //
     ////move the agent to the target position
     //private void FixedUpdate()
     //{
-    //    if (aStarPath != null && currentCellToMoveTo < aStarPath.Count)
+    //  if (aStarPath != null && currentCellToMoveTo < aStarPath.Count)
     //    {
     //        Timer += Time.deltaTime * 1f;
-    //        currentPos = aStarPath[currentCellToMoveTo].worldPosition;
+    //       currentPos = aStarPath[currentCellToMoveTo].worldPosition;
     //        if (agent.transform.position != currentPos)
     //        {
     //            agent.transform.position = Vector3.Lerp(agent.transform.position, currentPos, Timer);
     //        }
     //        else
     //        {
-    //            if (currentCellToMoveTo < aStarPath.Count - 1)
+    //           if (currentCellToMoveTo < aStarPath.Count - 1)
     //            {
     //                currentCellToMoveTo++;
     //                CheckCell();

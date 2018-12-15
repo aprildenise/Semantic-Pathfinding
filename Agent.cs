@@ -14,16 +14,17 @@ public class Agent: MonoBehaviour{
     private Dictionary<Threshold, float> tcostSoFar;
     private List<Cell> pathToTake; 
     private List<Threshold> tpathToTake; //temp
-    private bool pathFound;
 
-    //temporary
+    //the goal the agent wants to move to
     public Transform goal;
-    //public Transform agent;
 
-
-    //signals to update or pause pathfinding
-    private bool isHalted = false;
-    private bool isRefreshed = false;
+    //current signals to update or pause pathfinding
+    [HideInInspector]
+    public bool isCalculatingPath; //agent is calculating a path
+    [HideInInspector]
+    public bool hasFoundPath; //agent has finished calculating a path
+    private bool hasHaltedMovement; //agent has halted following the path it has found
+    private bool hasHaltedCalculating; //agent has halted calculating a path;
     private int updateRate = 0;
 
     //for movement
@@ -34,19 +35,21 @@ public class Agent: MonoBehaviour{
 
 
     void Start(){
+        //setups
+        hasHaltedMovement = false;
+        hasHaltedCalculating = false;
+
+        //temporarily here
         pathToTake = FindHPAPath(transform.position, goal.position);
+        //pathToTake = FindCellPath(transform.position, goal.position);
     }
 
-    void RestartPath()
-    {
-        pathToTake = null;
-        tpathToTake = null;
-        pathFound = false;
-    }
 
-    //for movement
+    /* Used for moving the agent from its origin to its goal 
+     * if it has found a path and is allowed to move.
+     */
     void LateUpdate(){
-        if (pathFound && !isHalted)
+        if (hasFoundPath && !hasHaltedMovement)
         {
             Timer += Time.deltaTime * moveSpeed;
             nextCell = pathToTake[stepsTaken].worldPosition;
@@ -60,11 +63,18 @@ public class Agent: MonoBehaviour{
                 {
                     stepsTaken++;
                     CheckCell();
+                    if (updateRate != 0){
+                        if (stepsTaken % updateRate == 0 && stepsTaken != 0){
+                        //update the path
+                        }
+                    }
                 }
             }
         }
     }
 
+    /* Helper function used to move the agent.
+     */
     private void CheckCell()
     {
         Timer = 0;
@@ -72,77 +82,120 @@ public class Agent: MonoBehaviour{
     }
 
 
-    public void HaltAgent(bool status)
+    /* Halts the agent from moving on its path.
+     * Input: desired status.
+     */
+    public void HaltMovement(bool status)
     {
-        isHalted = status;
+        hasHaltedMovement = status;
     }
 
-    /* An implementation for hpa
+
+    /* Halts the agent from calculating its path.
+     * Input: desired status
+     */
+    public void HaltCalculating(bool status){
+        hasHaltedCalculating = status;
+    }
+
+    /* Change the rate at which the agent recalculates the path.
+     * Rate is equvalent to the number of cells the agent travels in
+     * order to get to its goal.
+     * Input: desired status.
+     */
+    public void ChangeUpdateRate(int rate){
+        updateRate = rate;
+    }
+
+
+    /* Helper function to allow the agent to halt path calculation.
+     */
+    private IEnumerator WaitUntilCanCalculate(){
+        yield return new WaitUntil(() => hasHaltedCalculating == false);
+    }
+
+    /* Find a path from the agent's starting location to the desired goal
+     * location. This uses the HPA* algorithm.
+     * Input: start location, goal location.
+     * Output: the calculated path as a list of cells the agent must visit to
+     * get to the goal.
     */
-    public List<Cell> FindHPAPath(Vector3 start, Vector3 goal)
+    private List<Cell> FindHPAPath(Vector3 start, Vector3 goal)
     {
+        //setups
+        hasFoundPath = false;
+        isCalculatingPath = true;
         List<Cell> finalPath = new List<Cell>();
 
         //add the start position and the goal position to the threshold graph
-        //by finding which threshold is close to the two positions
-        //Debug.Log("For start:");
+        //by finding which threshold is close to the two positions.
         Threshold thresholdStart = FindNeartestThreshold(start, goal);
-        //Debug.Log("For goal:");
         Threshold thresholdGoal = FindNeartestThreshold(goal, start);
 
-        //find a path of thresholds that exist starting from thresholdStart and to thresholdGoal
+        //find a path of thresholds that exist starting from thresholdStart and to thresholdGoal.
         List<Threshold> thresholdPath = FindThresholdPath(thresholdStart, thresholdGoal);
         tpathToTake = thresholdPath;
 
-        //using all these thresholds, find a path to the goal from the start with the help of astar
-        //start to first threshold
+        //using all these thresholds, find a path to the goal from the start with the help of astar.
+        //path from start threshold to between threshold.
+        
+        //tests:
+        foreach(Threshold t in thresholdPath)
+        {
+            Debug.Log("threshold position:" + t.worldPosition);
+            Cell c = map.CellFromWorldPos(t.worldPosition);
+            Debug.Log("cellposition:" + c.worldPosition);
+        }
+
         List<Cell> temp = FindCellPath(start, thresholdStart.worldPosition);
         finalPath.AddRange(temp);
-        //between thresholds 
+
+        //path between the thresholds.
         for (int i = 1; i < thresholdPath.Count; i++)
         {
-            Debug.Log("Iteration:" + i);
-            //get the last position from the final path, this will be the new "start"
+            //get the last position from the final path, this will be the new "start."
             Vector3 newStart = thresholdPath[i - 1].worldPosition;
-            //the threshold will be the new goal
+            
+            //the threshold will be the new goal.
             Vector3 newGoal = thresholdPath[i].worldPosition;
             temp = FindCellPath(newStart, newGoal);
 
-            //add this path to the finalpath
+            //add this path to the finalpath.
             finalPath.AddRange(temp);
 
         }
-        //final threshold to the end
-        temp = FindCellPath(thresholdPath[thresholdPath.Count - 1].worldPosition, goal);
-        finalPath.AddRange(temp);
+        //path from final threshold to goal.
+        //temp = FindCellPath(thresholdPath[thresholdPath.Count - 1].worldPosition, goal);
+        //finalPath.AddRange(temp);
 
-        //done
-        pathToTake = finalPath; //temp
-        pathFound = true;
+        //done!
+        pathToTake = finalPath;
+        hasFoundPath = true;
+        isCalculatingPath = false;
         return finalPath;
 
 
     }
 
     /* Given a position, find the threshold that is near to both the beginning
-     * position and the goal position
-     * Input: position in question, goal position
-     * Output: threshold that is nearest to those positions
+     * position and the goal position.
+     * Input: position in question, goal position.
+     * Output: threshold that is nearest to those positions.
      */
-
-    public Threshold FindNeartestThreshold(Vector3 position, Vector3 goal)
+    private Threshold FindNeartestThreshold(Vector3 position, Vector3 goal)
     {
+        //setups.
         Threshold threshold = null;
 
-        //find the zone that the starting position belongs to
+        //find the zone that the starting position belongs to.
         Cell currentCell = map.CellFromWorldPos(position);
-        Cell goalCell = map.CellFromWorldPos(goal);
+        Cell goalCell = map.CellFromWorldPostest(goal);
 
-        //get the thresholds list from the zone that has this cell
+        //get the thresholds list from the zone that has this cell.
         int id = currentCell.zoneId;
         Zone zone = map.GetZone(id);
 
-        //find the threshold that is closest to the goal
+        //find the threshold that is closest to the goal.
         float cost = Mathf.Infinity;
         int i = 0;
         foreach (Threshold t in zone.thresholds){
@@ -151,9 +204,13 @@ public class Agent: MonoBehaviour{
                 
                 cost = temp;
                 threshold = t;
-                //Debug.Log("A potential threshold! It is :" + threshold.worldPosition + " at the distance of:" + temp + " at: " + i);
                 i++;
             }
+        }
+
+        if (!threshold.isWalkable)
+        {
+            Debug.Log("hey now...");
         }
 
         return threshold;
@@ -184,11 +241,20 @@ public class Agent: MonoBehaviour{
     }
 
 
-    //new code for the astar algorithm
-    public List<Cell> FindCellPath (Vector3 startPos, Vector3 goalPos){
-        
+    /* Find a path from the agent's starting location to the desired goal
+     * location. This uses the A* algorithm.
+     * Input: start location, goal location.
+     * Output: the calculated path as a list of cells the agent must visit to
+     * get to the goal.
+    */
+    private List<Cell> FindCellPath (Vector3 startPos, Vector3 goalPos){
+
+
         Cell startCell = map.CellFromWorldPos(startPos);
         Cell goalCell = map.CellFromWorldPos(goalPos);
+
+        Debug.Log("goalcell:" + goalCell.worldPosition + ". this is " + goalCell.isWalkable);
+
         PriorityQueue<Cell> frontier = new PriorityQueue<Cell>();
         cameFrom = new Dictionary<Cell, Cell>();
         costSoFar = new Dictionary<Cell, float>();
@@ -197,18 +263,46 @@ public class Agent: MonoBehaviour{
         frontier.Enqueue(startCell, 0);
         cameFrom[startCell] = startCell;
         costSoFar[startCell] = 0;
-
+        int temp = 0;
         while (frontier.Count() > 0){
+            temp++;
+
+            //Check if the agent is able to calculate their path.
+            if (hasHaltedCalculating){
+                StartCoroutine(WaitUntilCanCalculate());
+            }
+
+
+            //else, continue to calculate the path.
             Cell current = frontier.Deqeueue();
 
             if (current.Equals(goalCell)){
-                Debug.Log("A path has been found!");
                 path = RetraceCellPath(startCell, goalCell);
                 return path;
             }
+            if (current.worldPosition == new Vector3(-130.5f, -21.0f, -3.8f))
+            {
+                Debug.Log("wow!");
+                if (!current.Equals(goalCell))
+                {
+                    Debug.Log("HUH?");
+                }
+            }
+            if (temp == 80)
+            {
+                break;
+            }
+
+            Debug.Log("We're looking at the current cell. this is:");
+            Debug.Log(current.worldPosition);
+            Debug.Log("Goal is:" + goalCell.worldPosition);
 
             foreach(Edge e in current.edgesToNeighbors){
                 Cell neighbor = e.incident;
+
+                //Debug.Log("We are looking at neighbors!. Some info about this neighbor:");
+                //Debug.Log(neighbor.worldPosition);
+                //Debug.Log(neighbor.isWalkable);
 
                 float newCost = costSoFar[current] + GetCellCost(current, neighbor);
                 if (!costSoFar.ContainsKey(neighbor) || newCost < costSoFar[neighbor]){
@@ -220,19 +314,23 @@ public class Agent: MonoBehaviour{
             }
         }
 
-        Debug.Log("A path was not found...");
         return path;
     }
 
 
+    /* Given the start cell and the goal cell of the agent, give calculated path 
+     * using the cells that are in cameFrom.
+     * Input: start location, goal location.
+     * Output: the calculated path as a list of cells the agent must visit to
+     * get to the goal.
+     */
     private List<Cell> RetraceCellPath(Cell startCell, Cell goalCell){
         
-        //loop through the cameFrom dictionary
+        //loop through the cameFrom dictionary.
         List<Cell> path = new List<Cell>();
         Cell currentCell = goalCell;
         while (currentCell != startCell)
         {
-            Debug.Log("Adding....");
             path.Add(currentCell);
             currentCell = cameFrom[currentCell];
         }
@@ -243,7 +341,9 @@ public class Agent: MonoBehaviour{
     }
 
 
-    public List<Threshold> FindThresholdPath(Threshold startThreshold, Threshold goalThreshold)
+    /* Similar to the above method, but for thresholds rather than cells.
+     */
+    private List<Threshold> FindThresholdPath(Threshold startThreshold, Threshold goalThreshold)
     {
 
         PriorityQueue<Threshold> frontier = new PriorityQueue<Threshold>();
@@ -257,6 +357,14 @@ public class Agent: MonoBehaviour{
 
         while (frontier.Count() > 0)
         {
+
+            //Check if the agent is able to calculate their path.
+            if (hasHaltedCalculating){
+                StartCoroutine(WaitUntilCanCalculate());
+            }
+
+
+            //else, continue to calculate the path.
             Threshold current = frontier.Deqeueue();
 
             if (current.Equals(goalThreshold))
@@ -284,7 +392,9 @@ public class Agent: MonoBehaviour{
     }
 
 
-    
+
+    /* Similar to the above method, but for thresholds rather than cells.
+     */
     private List<Threshold> RetraceThresholdPath(Threshold startThreshold, Threshold goalThreshold){
         
         //loop through the cameFrom dictionary
@@ -302,54 +412,66 @@ public class Agent: MonoBehaviour{
     }
 
 
+    /* Calculate the cost from one cell to the next. 
+     * This is the distance from the source cell to the sink cell
+     * Input: source cell, sink cell
+     * Output: cost
+     */
     private float GetCellCost(Cell source, Cell sink){
         float cost = Vector3.Distance(source.worldPosition, sink.worldPosition);
         return cost;
     }
 
-
+    /* Calculate the heuristic cost from one cell to the next. 
+     * This is the distance from the source cell to the sink cell
+     * Input: source cell, sink cell
+     * Output: cost
+     */
     private float GetCellHeuristic(Cell source, Cell sink){
         float h = Vector3.Distance(source.worldPosition, sink.worldPosition);
         return h;
     }
 
 
-    
+    /* Same as above, but for thresholds.
+     */
     private float GetThresholdCost(Threshold source, Threshold sink){
         float cost = Vector3.Distance(source.worldPosition, sink.worldPosition);
         return cost;
     }
 
 
+    /* Same as above, but for thresholds.
+     */
     private float GetThresholdHeuristic(Threshold source, Threshold sink){
         float h = Vector3.Distance(source.worldPosition, sink.worldPosition);
         return h;
     }
 
 
-    //private void OnDrawGizmos()
-    //{
-    //    if (pathToTake != null)
-    //    {
-    //        foreach (Cell c in pathToTake)
-    //        {
-    //            Vector3 increment = new Vector3(c.cellSize / 2f, 0, -1f * c.cellSize / 2f);
-    //            Vector3 center = c.worldPosition + increment;
-    //            Gizmos.color = Color.green;
-    //            Gizmos.DrawCube(center, new Vector3(c.cellSize, c.cellSize, c.cellSize));
-    //        }
-    //    }
-    //    if (tpathToTake != null)
-    //    {
-    //        foreach (Threshold c in tpathToTake)
-    //        {
-    //            Vector3 increment = new Vector3(c.cellSize / 2f, 0, -1f * c.cellSize / 2f);
-    //            Vector3 center = c.worldPosition + increment;
-    //            Gizmos.color = Color.blue;
-    //            Gizmos.DrawCube(center, new Vector3(c.cellSize, c.cellSize, c.cellSize));
-    //        }
-    //    }
-    //}
+    private void OnDrawGizmos()
+    {
+       if (pathToTake != null)
+       {
+           foreach (Cell c in pathToTake)
+           {
+               Vector3 increment = new Vector3(c.cellSize / 2f, 0, -1f * c.cellSize / 2f);
+               Vector3 center = c.worldPosition + increment;
+               Gizmos.color = Color.green;
+               Gizmos.DrawCube(center, new Vector3(c.cellSize, c.cellSize, c.cellSize));
+           }
+       }
+       if (tpathToTake != null)
+       {
+           foreach (Threshold c in tpathToTake)
+           {
+               Vector3 increment = new Vector3(c.cellSize / 2f, 0, -1f * c.cellSize / 2f);
+               Vector3 center = c.worldPosition + increment;
+               Gizmos.color = Color.yellow;
+               Gizmos.DrawCube(center, new Vector3(c.cellSize, c.cellSize, c.cellSize));
+           }
+       }
+    }
 
 
 }

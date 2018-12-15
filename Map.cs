@@ -12,11 +12,12 @@ public class Map : MonoBehaviour
 {
 
     //globals
-    private int mapWidth;
-    private int mapHeight;
+    private float mapWidth;
+    private float mapHeight;
     private int gridWidth; //number of cells across
     private int gridHeight; //number of cells down
     private Vector3 topLeftPos; //world position of the top left corner of the map
+    private float cellSize;
 
     public Cell[,] grid; //2d grid of cells that cover the map
     public List<Threshold> thresholdGraph;
@@ -49,33 +50,33 @@ public class Map : MonoBehaviour
 
 
 
-    /* Determine the entire size of the map using the corners of the map
+    /* Determine the entire size of the map using the corners of the map.
     */
-    public void GetMapDimensions()
+    private void GetMapDimensions()
     {
-        //use the Renderers of the corners to find where they are in world coordinates
-
-        float approxLeft = (topLeft.bounds.center.x - (topLeft.bounds.size.x / 2));
-        float approxRight = (topRight.bounds.center.x + (topRight.bounds.size.x / 2));
-        float approxBottom = (bottomRight.bounds.center.z - (bottomRight.bounds.size.z / 2));
-        float approxTop = (topLeft.bounds.center.z + (topLeft.bounds.size.z / 2));
-
-        //use the world coordinates to get the width and the height of the map
-        mapWidth = (int)Mathf.Round(Mathf.Abs(approxLeft - approxRight));
-        mapHeight = (int)Mathf.Round(Mathf.Abs(approxTop - approxBottom));
+        //use the Renderers of the corner objects in order to find the bounds on all four sides.
+        float approxLeft = topLeft.bounds.min.x;
+        float approxRight = topRight.bounds.max.x;
+        float approxBottom = Mathf.Round(bottomRight.bounds.center.z - (bottomRight.bounds.size.z / 2));
+        float approxTop = Mathf.Round(topLeft.bounds.center.z + (topLeft.bounds.size.z / 2));
         topLeftPos = new Vector3(approxLeft, topLeft.bounds.center.y, approxTop);
+
+        //calculate the width and the height
+        mapWidth = Mathf.Round(Mathf.Abs(approxLeft - approxRight));
+        mapHeight = Mathf.Round(Mathf.Abs(approxTop - approxBottom));
 
     }
 
 
 
-    /* Build a 2d grid of cells that cover the entire map
-     * Input: size of the cell in respect to world coordinates
+    /* Build a 2d grid of cells that cover the entire map.
+     * Input: size of the cell in respect to world coordinates.
      */
-    public void BuildCellGrid(float cellSize)
+    private void BuildCellGrid(float cellSize)
     {
 
         //calculate how many cells we can fit across the map
+        this.cellSize = cellSize;
         int numXCells = Mathf.RoundToInt(mapWidth / cellSize);
         int numZCells = Mathf.RoundToInt(mapHeight / cellSize);
         gridHeight = numZCells;
@@ -144,7 +145,7 @@ public class Map : MonoBehaviour
     /* Given a list of zones, find all the cells that belong to that zone
      * and assign them to that zone
      */
-    public void DefineZones()
+    private void DefineZones()
     {
         List<Zone> zones = zm.InitZones();
         foreach (Zone z in zones)
@@ -172,7 +173,7 @@ public class Map : MonoBehaviour
 
     /* Within each zone, find the thresholds that connect two different zones together
      */
-    public void FindThresholds()
+    private void FindThresholds()
     {
 
         //table to see if we have visited a cell
@@ -212,7 +213,7 @@ public class Map : MonoBehaviour
      * Input: visited array for traversing, starting cell, list where thresholds will be places
      * Output: list of thresholds that were found
      */
-    public List<Threshold> FindThresholdSearch(bool[,] visited, Cell start, List<Threshold> thresholdsList)
+    private List<Threshold> FindThresholdSearch(bool[,] visited, Cell start, List<Threshold> thresholdsList)
     {
         Queue<Cell> s = new Queue<Cell>();
         s.Enqueue(start);
@@ -271,7 +272,7 @@ public class Map : MonoBehaviour
      * Also assign thresholds to their respective zones
      * Input: threshold graph
      */
-    public void BuildThresholdGraph(List<Threshold> thresholdsList)
+    private void BuildThresholdGraph(List<Threshold> thresholdsList)
     {
         //look at all the thresholds in the list. 
         //If threshold A and B have zones in common, then connect them
@@ -329,7 +330,7 @@ public class Map : MonoBehaviour
 
     /* Given the threshold list, assign to each zone the thresholds that belong to its zone
      */
-    public void AddThresholdsToZone()
+    private void AddThresholdsToZone()
     {
         List<Threshold> thresholdList = thresholdGraph;
         //iterate through the list to find the zones the thresholds belong to
@@ -362,32 +363,112 @@ public class Map : MonoBehaviour
     }
 
 
-    /* Given some world position, give the cell that is at that position
-     * Input: Vector3 of the desired cell
-     * Output: cell at that position
+    /* Given some world position, give the cell that is at that position.
+     * Input: Vector3 of the desired cell.
+     * Output: cell at that position.
      */
     public Cell CellFromWorldPos(Vector3 worldPos)
     {
 
-        float approxLeft = (topLeft.bounds.center.x - (topLeft.bounds.size.x / 2));
-        float approxRight = (topRight.bounds.center.x + (topRight.bounds.size.x / 2));
-        float worldDistance = Mathf.Sqrt((approxRight - approxLeft) * (approxRight - approxLeft));
-        float posDistance = Mathf.Sqrt((worldPos.x - approxLeft) * (worldPos.x - approxLeft));
-        float percentX = posDistance / worldDistance;
+        ////round off the given world position as needed.
+        //float xpos =  Mathf.Floor(worldPos.x / cellSize) * cellSize;
+        //float zpos = Mathf.Floor(worldPos.z / cellSize) * cellSize;
 
+        //int z = 0;
+        //int x = 0;
+
+        ////search for the cell with the same z position.
+        //int t = 0;
+        //int b = grid.GetLength(0);
+        //while (t <= b)
+        //{
+        //    int m = t + (b - 1) / 2;
+
+        //    if (grid[m, 0].worldPosition.z == zpos)
+        //    {
+        //        z = m;
+        //        break;
+        //    }
+
+        //    if (grid[m, 0].worldPosition.z > zpos)
+        //    {
+        //        t = m + 1;
+        //    }
+        //    else
+        //    {
+        //        b = m - 1;
+        //    }
+        //}
+
+        ////now, search for the cell with the same x position.
+        //int l = 0;
+        //int r = grid.GetLength(1);
+        //while (l <= r)
+        //{
+        //    int m = l + (r - l) / 2;
+
+        //    if (grid[z, m].worldPosition.x == xpos)
+        //    {
+        //        x = m;
+        //        break;
+        //    }
+
+        //    if (grid[z, m].worldPosition.x < xpos){
+        //        l = m + 1;
+        //    }
+
+        //    else
+        //    {
+        //        r = m - 1;
+        //    }
+        //}
+
+        //Cell c = grid[z, x];
+
+        //return c;
+
+
+        //calculate how far along the grid the cell is on the x axis, in a percentage.
+        float approxLeft = (topLeft.bounds.center.x - (topLeft.bounds.size.x / 2));
+        float approxLeftRound = Mathf.Floor(approxLeft / cellSize) * cellSize;
+        float approxRight = (topRight.bounds.center.x + (topRight.bounds.size.x / 2));
+        float approxRightRound = Mathf.Floor(approxRight / cellSize) * cellSize;
+        //float worldDistance = Mathf.Sqrt((approxRight - approxLeft) * (approxRight - approxLeft));
+        //float posDistance = Mathf.Sqrt((worldPos.x - approxLeft) * (worldPos.x - approxLeft));
+        float worldDistance = Mathf.Abs(approxRightRound - approxLeftRound);
+        float posDistance = Mathf.Abs(worldPos.x - approxLeft);
+        float posDistanceRound = Mathf.Floor(posDistance / cellSize) * cellSize;
+        float percentX = posDistanceRound / worldDistance;
+
+
+        // float approxLeft = (topLeft.bounds.center.x - (topLeft.bounds.size.x / 2));
+        // float approxLeftRound = Mathf.Floor(approxLeft / cellSize) * cellSize;
+        // float approxRight = (topRight.bounds.center.x + (topRight.bounds.size.x / 2));
+        // float approxRightRound = Mathf.Floor(approxRight / cellSize) * cellSize;
+        // float worldDistance = Mathf.Abs(approxRight - approxLeft);
+
+        int columnNumber = (int)Mathf.Floor(worldPos.x/(worldDistance / gridWidth));
+
+
+
+        //same as above, but on the z axis.
         float approxBottom = (bottomRight.bounds.center.z - (bottomRight.bounds.size.z / 2));
         float approxTop = (topLeft.bounds.center.z + (topLeft.bounds.size.z / 2));
         worldDistance = Mathf.Abs(approxTop - approxBottom);
-        posDistance = Mathf.Abs(worldPos.z - approxTop);
-        float percentZ = posDistance / worldDistance;
 
-        //make sure the percent does not go beyond 100%
+        //int rowNumber = (int)Mathf.Floor(worldPos.z/(worldDistance / gridHeight));
+       posDistance = Mathf.Abs(worldPos.z - approxTop);
+       float percentZ = posDistance / worldDistance;
+
+        //make sure the percent does not go beyond 100%.
         percentX = Mathf.Clamp01(percentX);
         percentZ = Mathf.Clamp01(percentZ);
 
-        //find the indeces of the cell in the grid using the world position
-        int x = (Mathf.RoundToInt(gridWidth * percentX)) - 1;
-        int z = (Mathf.RoundToInt(gridHeight * percentZ)) - 1;
+        //find the indeces of the cell in the grid using the world position.
+
+
+        int x = (Mathf.RoundToInt(gridWidth * percentX) - 1);
+        int z = (Mathf.RoundToInt(gridHeight * percentZ) - 1);
 
         if (x < 0)
         {
@@ -398,8 +479,44 @@ public class Map : MonoBehaviour
             z = 0;
         }
 
+        Cell c = grid[z, x];
+        if (!c.isWalkable)
+        {
+            Debug.Log("warning, invalid cell");
+        }
+        return c;
+    }
 
-        return grid[z, x];
+
+
+    public Cell CellFromWorldPostest(Vector3 worldPos){
+        float approxLeft = (topLeft.bounds.center.x - (topLeft.bounds.size.x / 2));
+        //float approxLeftRound = Mathf.Floor(approxLeft / cellSize) * cellSize;
+        float approxRight = (topRight.bounds.center.x + (topRight.bounds.size.x / 2));
+        //float approxRightRound = Mathf.Floor(approxRight / cellSize) * cellSize;
+        float worldDistance = Mathf.Abs(approxRight - approxLeft);
+
+        int columnNumber = (int)Mathf.Floor((worldPos.x- approxLeft)/(worldDistance / gridWidth));
+
+
+
+        //same as above, but on the z axis.
+        float approxBottom = (bottomRight.bounds.center.z - (bottomRight.bounds.size.z / 2));
+        float approxTop = (topLeft.bounds.center.z + (topLeft.bounds.size.z / 2));
+        worldDistance = Mathf.Abs(approxTop - approxBottom);
+
+        int rowNumber = (int)Mathf.Floor((worldPos.z- approxBottom)/(worldDistance / gridHeight));
+       // posDistance = Mathf.Abs(worldPos.z - approxTop);
+       // float percentZ = posDistance / worldDistance;
+
+        //make sure the percent does not go beyond 100%.
+        //percentX = Mathf.Clamp01(percentX);
+        //percentZ = Mathf.Clamp01(percentZ);
+
+        //find the indeces of the cell in the grid using the world position.
+
+        Cell c = grid[rowNumber, columnNumber];
+        return c;
     }
 
 
@@ -411,74 +528,76 @@ public class Map : MonoBehaviour
 
 
 
-    ////for debugging and testing only. used to draw the cell grid
+    //for debugging and testing only. used to draw the cell grid
 
-    //public void OnDrawGizmos()
-    //{
+    public void OnDrawGizmos()
+    {
 
-    //    if (grid != null)
-    //    {
-    //        for (int i = 0; i < gridWidth; i++)
-    //        {
-    //            for (int j = 0; j < gridHeight; j++)
-    //            {
-    //                Cell c = grid[j, i];
+       if (grid != null)
+       {
+           for (int i = 0; i < gridWidth; i++)
+           {
+               for (int j = 0; j < gridHeight; j++)
+               {
+                   Cell c = grid[j, i];
 
-    //                //uncomment to see thresholds and iswalkables
-    //                if (c.isWalkable && !c.threshold)
-    //                {
-    //                    Gizmos.color = UnityEngine.Color.clear;
-    //                }
-    //                else if (c.isWalkable && c.threshold)
-    //                {
-    //                    Gizmos.color = UnityEngine.Color.blue;
-    //                }
-    //                else if (!c.isWalkable)
-    //                {
-    //                    //Gizmos.color = UnityEngine.Color.red;
-    //                }
+                    //uncomment to see thresholds and iswalkables
+                    //if (c.isWalkable && !c.threshold)
+                    //{
+                    //    Gizmos.color = UnityEngine.Color.clear;
+                    //}
 
-
-
-
-    //                //another way to draw the zones
-    //                /*
-    //                int temp = c.zoneId % 5;
-    //                if (temp == 0)
-    //                {
-    //                    Gizmos.color = Color.yellow;
-    //                }
-    //                else if (temp == 1)
-    //                {
-    //                    Gizmos.color = Color.blue;
-    //                }
-    //                else if (temp == 2)
-    //                {
-    //                    Gizmos.color = Color.magenta;
-    //                }
-    //                else if (temp == 3)
-    //                {
-    //                    Gizmos.color = Color.cyan;
-    //                }
-    //                else if (temp == 4)
-    //                {
-    //                    Gizmos.color = Color.grey;
-    //                }
-    //                else
-    //                {
-    //                    Gizmos.color = Color.green;
-    //                }
-    //                */
+                    //else if (c.isWalkable && c.threshold)
+                    //{
+                    //    Gizmos.color = UnityEngine.Color.blue;
+                    //    //Gizmos.color = UnityEngine.Color.clear;
+                    //}
+                    //else if (!c.isWalkable)
+                    //{
+                    //    Gizmos.color = UnityEngine.Color.red;
+                    //}
 
 
-    //                Vector3 increment = new Vector3(c.cellSize / 2f, 0, -1f * c.cellSize / 2f);
-    //                Vector3 center = c.worldPosition + increment;
-    //                Gizmos.DrawCube(center, new Vector3(c.cellSize, c.cellSize, c.cellSize));
-    //            }
-    //        }
 
-    //    }
-    //}
+
+                    //another way to draw the zones
+
+                    int temp = c.zoneId % 5;
+                    if (temp == 0)
+                    {
+                        Gizmos.color = UnityEngine.Color.yellow;
+                    }
+                    else if (temp == 1)
+                    {
+                        Gizmos.color = UnityEngine.Color.blue;
+                    }
+                    else if (temp == 2)
+                    {
+                        Gizmos.color = UnityEngine.Color.magenta;
+                    }
+                    else if (temp == 3)
+                    {
+                        Gizmos.color = UnityEngine.Color.cyan;
+                    }
+                    else if (temp == 4)
+                    {
+                        Gizmos.color = UnityEngine.Color.grey;
+                    }
+                    else
+                    {
+                        Gizmos.color = UnityEngine.Color.green;
+                    }
+
+
+
+                    Vector3 increment = new Vector3(c.cellSize / 2f, 0, -1f * c.cellSize / 2f);
+                   Vector3 center = c.worldPosition + increment;
+                   Gizmos.DrawCube(center, new Vector3(c.cellSize, c.cellSize, c.cellSize));
+               }
+           }
+
+       }
+    }
 
 
     /* Color zones, thresholds, and obstacles on an EMGU image
