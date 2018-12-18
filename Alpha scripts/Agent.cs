@@ -35,13 +35,18 @@ public class Agent: MonoBehaviour{
 
 
     void Start(){
+        if (map == null){
+            map = GameObject.Find("MapManager").GetComponent<Map>();
+        }
+
         //setups
         hasHaltedMovement = false;
         hasHaltedCalculating = false;
 
         //temporarily here
-        pathToTake = FindHPAPath(transform.position, goal.position);
-        //pathToTake = FindCellPath(transform.position, goal.position);
+        if (goal != null){
+             pathToTake = FindHPAPath(transform.position, goal.position);
+        }
     }
 
 
@@ -127,6 +132,21 @@ public class Agent: MonoBehaviour{
         isCalculatingPath = true;
         List<Cell> finalPath = new List<Cell>();
 
+
+        //check if the start is already in the same zone as the goal
+        Cell startCell = map.CellFromWorldPos(start);
+        Cell goalCell = map.CellFromWorldPos(goal);
+        if (map.GetZone(startCell.zoneId).zoneId == map.GetZone(goalCell.zoneId).zoneId)
+        {
+            //simply use the find cell path function to get to the goal
+            List<Cell> tmp = FindCellPath(startCell, goalCell);
+            finalPath.AddRange(tmp);
+            pathToTake = finalPath;
+            hasFoundPath = true;
+            isCalculatingPath = false;
+            return finalPath;
+        }
+
         //add the start position and the goal position to the threshold graph
         //by finding which threshold is close to the two positions.
         Threshold thresholdStart = FindNeartestThreshold(start, goal);
@@ -138,17 +158,19 @@ public class Agent: MonoBehaviour{
 
         //using all these thresholds, find a path to the goal from the start with the help of astar.
         //path from start threshold to between threshold.
-        List<Cell> temp = FindCellPath(start, thresholdStart.worldPosition);
+        Cell nextGoal = map.CellFromThreshold(thresholdStart);
+        List<Cell> temp = FindCellPath(startCell, nextGoal);
         finalPath.AddRange(temp);
 
         //path between the thresholds.
         for (int i = 1; i < thresholdPath.Count; i++)
         {
             //get the last position from the final path, this will be the new "start."
-            Vector3 newStart = thresholdPath[i - 1].worldPosition;
+            Cell newStart = map.CellFromThreshold(thresholdPath[i-1]);
             
             //the threshold will be the new goal.
-            Vector3 newGoal = thresholdPath[i].worldPosition;
+            Cell newGoal = map.CellFromThreshold(thresholdPath[i]);
+
             temp = FindCellPath(newStart, newGoal);
 
             //add this path to the finalpath.
@@ -156,7 +178,8 @@ public class Agent: MonoBehaviour{
 
         }
         //path from final threshold to goal.
-        temp = FindCellPath(thresholdPath[thresholdPath.Count - 1].worldPosition, goal);
+        nextGoal = map.CellFromThreshold(thresholdPath[thresholdPath.Count - 1]);
+        temp = FindCellPath(nextGoal, goalCell);
         finalPath.AddRange(temp);
 
         //done!
@@ -209,11 +232,7 @@ public class Agent: MonoBehaviour{
      * Output: the calculated path as a list of cells the agent must visit to
      * get to the goal.
     */
-    private List<Cell> FindCellPath (Vector3 startPos, Vector3 goalPos){
-
-
-        Cell startCell = map.CellFromWorldPos(startPos);
-        Cell goalCell = map.CellFromWorldPos(goalPos);
+    private List<Cell> FindCellPath (Cell startCell, Cell goalCell){
 
 
         PriorityQueue<Cell> frontier = new PriorityQueue<Cell>();
@@ -391,8 +410,10 @@ public class Agent: MonoBehaviour{
     }
 
 
+    //for debugging
     private void OnDrawGizmos()
     {
+
        if (pathToTake != null)
        {
            foreach (Cell c in pathToTake)
@@ -401,6 +422,7 @@ public class Agent: MonoBehaviour{
                Vector3 center = c.worldPosition + increment;
                Gizmos.color = Color.blue;
                Gizmos.DrawCube(center, new Vector3(c.cellSize, c.cellSize, c.cellSize));
+
            }
        }
        if (tpathToTake != null)
@@ -409,10 +431,18 @@ public class Agent: MonoBehaviour{
            {
                Vector3 increment = new Vector3(c.cellSize / 2f, 0, -1f * c.cellSize / 2f);
                Vector3 center = c.worldPosition + increment;
-               Gizmos.color = Color.yellow;
+               Gizmos.color = Color.green;
                Gizmos.DrawCube(center, new Vector3(c.cellSize, c.cellSize, c.cellSize));
            }
        }
+
+       //another way to draw the paths
+    //    if (tpathToTake != null){
+    //        for (int i = 1; i < tpathToTake.Count; i++){
+    //            Gizmos.color = Color.yellow;
+    //            Gizmos.DrawLine(tpathToTake[i-1].worldPosition, tpathToTake[i].worldPosition);
+    //        }
+    //    }
     }
 
 

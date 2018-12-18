@@ -11,6 +11,7 @@ public class HPAManager : MonoBehaviour
     public Map m;
     public Transform agent; //temp
     public Transform goal; //temp
+    public AStarAlgo aStar;
     public ZoneManager zm;
 
 
@@ -21,6 +22,7 @@ public class HPAManager : MonoBehaviour
     void Start()
     {
         m.InitMap();
+        HPAAlt(agent.position, goal.position);
 
     }
 
@@ -302,48 +304,48 @@ public class HPAManager : MonoBehaviour
     */
 
     /* An alternate implementation for hpa
-    // */
-    //public List<Cell> HPAAlt(Vector3 start, Vector3 goal)
-    //{
-    //    List<Cell> finalPath = new List<Cell>();
+     */
+    public List<Cell> HPAAlt(Vector3 start, Vector3 goal)
+    {
+        List<Cell> finalPath = new List<Cell>();
 
-    //    //add the start position and the goal position to the threshold graph
-    //    //by finding which threshold is close to the two positions
-    //    Threshold thresholdStart = FindNeartestThreshold(start, goal);
-    //    Threshold thresholdGoal = FindNeartestThreshold(goal, start);
+        //add the start position and the goal position to the threshold graph
+        //by finding which threshold is close to the two positions
+        Threshold thresholdStart = FindNeartestThreshold(start, goal);
+        Threshold thresholdGoal = FindNeartestThreshold(goal, start);
 
-    //    //find a path of thresholds that exist starting from thresholdStart and to thresholdGoal
-    //    List<Threshold> thresholdPath = aStar.FindPathT(thresholdStart, thresholdGoal);
+        //find a path of thresholds that exist starting from thresholdStart and to thresholdGoal
+        List<Threshold> thresholdPath = aStar.FindPathT(thresholdStart, thresholdGoal);
 
-    //    //using all these thresholds, find a path to the goal from the start with the help of astar
-    //    //first node
-    //    finalPath.Add(m.CellFromWorldPos(start));
-    //    //start to first threshold
-    //    List<Cell> temp = aStar.FindPath(start, thresholdStart.worldPosition);
-    //    finalPath.AddRange(temp);
-    //    //between thresholds 
-    //    for (int i = 1; i < thresholdPath.Count; i++)
-    //    {
-    //        //get the last position from the final path, this will be the new "start"
-    //        Vector3 newStart = thresholdPath[i-1].worldPosition;
-    //        //the threshold will be the new goal
-    //        Vector3 newGoal = thresholdPath[i].worldPosition;
-    //        temp = aStar.FindPath(newStart, newGoal);
+        //using all these thresholds, find a path to the goal from the start with the help of astar
+        //first node
+        finalPath.Add(m.CellFromWorldPos(start));
+        //start to first threshold
+        List<Cell> temp = aStar.FindPath(start, thresholdStart.worldPosition);
+        finalPath.AddRange(temp);
+        //between thresholds 
+        for (int i = 1; i < thresholdPath.Count; i++)
+        {
+            //get the last position from the final path, this will be the new "start"
+            Vector3 newStart = thresholdPath[i-1].worldPosition;
+            //the threshold will be the new goal
+            Vector3 newGoal = thresholdPath[i].worldPosition;
+            temp = aStar.FindPath(newStart, newGoal);
 
-    //        //add this path to the finalpath
-    //        finalPath.AddRange(temp);
+            //add this path to the finalpath
+            finalPath.AddRange(temp);
             
-    //    }
-    //    //final threshold to the end
-    //    temp = aStar.FindPath(thresholdPath[thresholdPath.Count - 1].worldPosition, goal);
-    //    finalPath.AddRange(temp);
+        }
+        //final threshold to the end
+        temp = aStar.FindPath(thresholdPath[thresholdPath.Count - 1].worldPosition, goal);
+        finalPath.AddRange(temp);
 
-    //    //done
-    //    path = finalPath; //temp
-    //    return finalPath;
+        //done
+        path = finalPath; //temp
+        return finalPath;
 
 
-    //}
+    }
 
 
     /* Given a position, find the threshold that is near to both the beginning

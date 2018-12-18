@@ -17,12 +17,12 @@ public class Cell{
     public int gridPositionZ;
     public bool threshold; //temp
 
-    ////for A* gCost and hCost
-    ////!!WILL HAVE TO CHANGE LATER!!
-    //public int gCost;
-    //public int hCost;
-    //public Cell parent; //only specifically for astar, should change later so that we 
-    ////don't have so many references in this class
+    //for A* gCost and hCost
+    //!!WILL HAVE TO CHANGE LATER!!
+    public int gCost;
+    public int hCost;
+    public Cell parent; //only specifically for astar, should change later so that we 
+    //don't have so many references in this class
 
 
     //constructor
@@ -67,12 +67,12 @@ public class Cell{
     }
 
 
-    ////get fCost
-    //public int fCost
-    //{
-    //    get
-    //    {
-    //        return gCost + hCost;
-    //    }
-    //}
+    //get fCost
+    public int fCost
+    {
+        get
+        {
+            return gCost + hCost;
+        }
+    }
 }
