@@ -16,12 +16,14 @@ public class Cell{
     public int gridPositionX; //position of the cell in the 2d grid
     public int gridPositionZ;
     public bool threshold; //temp
+    public float iCost;
 
 
     //constructor
     public Cell(Vector3 worldpos, int gridx, int gridz, float size)
     {
         zoneId = 0;
+        iCost = 0;
         worldPosition = worldpos;
         gridPositionX = gridx;
         gridPositionZ = gridz;

@@ -6,7 +6,7 @@ public class Zone{
 
 
     public int zoneId;
-    public Renderer renderer;
+    public new Renderer renderer;
     //public int width; //!!MAY NOT BE NEEDED!!
     //public int height;
     public Vector3 topLeft; //the 4 corners of the zone
@@ -15,13 +15,14 @@ public class Zone{
     public Vector3 bottomRight;
 
     public List<Threshold> thresholds; //list of thresholds that belong to this zone
-
+    public float iCost;
 
     //constructor
-    public Zone(int zoneId, Renderer renderer)
+    public Zone(int zoneId, Renderer renderer, float iCost)
     {
         this.zoneId = zoneId;
         this.renderer = renderer;
+        this.iCost = iCost;
         FindZoneCorners();
     }
 

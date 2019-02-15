@@ -159,12 +159,15 @@ public class Map : MonoBehaviour
             Cell bottomLeftCell = CellFromWorldPos(z.bottomLeft);
 
             //mark the cells between the above bounds as belonging to this zone
+            //also add the influence cost of the zone into the cell
             int id = z.zoneId;
+            float iCost = z.iCost;
             for (int i = topLeftCell.gridPositionZ; i < bottomLeftCell.gridPositionZ; i++)
             {
                 for (int j = topLeftCell.gridPositionX; j < topRightCell.gridPositionX; j++)
                 {
                     grid[i, j].zoneId = id;
+                    grid[i, j].iCost = iCost;
                 }
             }
         }
@@ -244,7 +247,7 @@ public class Map : MonoBehaviour
                     {
 
                         c.threshold = true;
-                        Threshold t = new Threshold(cell.zoneId, c.zoneId, c.worldPosition, c.gridPositionX, c.gridPositionZ, c.cellSize);
+                        Threshold t = new Threshold(cell.zoneId, c.zoneId, c.iCost, c.worldPosition, c.gridPositionX, c.gridPositionZ, c.cellSize);
                         thresholdsList.Add(t);
                     }
                 }
@@ -481,11 +484,11 @@ public class Map : MonoBehaviour
                    Cell c = grid[j, i];
 
                     //uncomment to see thresholds and iswalkables
-                    if (c.isWalkable && !c.threshold)
-                    {
-                        Gizmos.color = UnityEngine.Color.clear;
-                    }
-                    else if (c.isWalkable && c.threshold)
+                    //if (c.isWalkable && !c.threshold)
+                    //{
+                    //    Gizmos.color = UnityEngine.Color.clear;
+                    //}
+                    if (c.isWalkable && c.threshold)
                     {
                         Gizmos.color = UnityEngine.Color.blue;
                         Vector3 increment = new Vector3(c.cellSize / 2f, 0, -1f * c.cellSize / 2f);

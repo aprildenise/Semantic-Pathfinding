@@ -23,9 +23,11 @@ public class ZoneManager : MonoBehaviour {
         }
         List<Zone> zones = new List<Zone>();
         int num = 0;
+
         foreach (GameObject z in zonesObjectsAlt)
         {
-            Zone zone = new Zone(num, z.GetComponent<Renderer>());
+            float iCost = FindICost(z);
+            Zone zone = new Zone(num, z.GetComponent<Renderer>(), iCost);
             zones.Add(zone);
             num++;
         }
@@ -43,6 +45,21 @@ public class ZoneManager : MonoBehaviour {
     {
         Zone z = zones[id];
         return z;
+    }
+
+
+    /* Find the Influence Cost from this zone, if it exists
+    */
+    private float FindICost(GameObject z)
+    {
+        //get the reference to the Influence Cost component
+        InfluenceCost influenceCost = z.GetComponent<InfluenceCost>();
+        if (!influenceCost)
+        {
+            //no Influence Cost component on this Zone object
+            return 0f;
+        }
+        return influenceCost.iCost;
     }
 
 }

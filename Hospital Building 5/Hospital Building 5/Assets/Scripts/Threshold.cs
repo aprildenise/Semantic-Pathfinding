@@ -7,12 +7,14 @@ public class Threshold : Cell{
     
     public int tzoneID; //zoneid belonging to this threshold. this is the zoneID that this threshold is connecting
     public List<ThresholdEdge> tedgesToNeighbors;
-    public Threshold tparent; //temporary
+    //public Threshold tparent; //temporary
 
+    public new float iCost;
 
     //Constructor 
-    public Threshold(int tzoneID, int czoneID, Vector3 worldPos, int x, int y, float size) : base(worldPos, x, y, size)
+    public Threshold(int tzoneID, int czoneID, float iCost, Vector3 worldPos, int x, int y, float size) : base(worldPos, x, y, size)
     {
+        this.iCost = iCost;
         this.tzoneID = tzoneID;
         this.zoneId = czoneID;
         this.isWalkable = true;

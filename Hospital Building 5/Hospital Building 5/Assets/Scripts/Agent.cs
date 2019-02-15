@@ -268,7 +268,7 @@ public class Agent: MonoBehaviour{
                 float newCost = costSoFar[current] + GetCellCost(current, neighbor);
                 if (!costSoFar.ContainsKey(neighbor) || newCost < costSoFar[neighbor]){
                     costSoFar[neighbor] = newCost;
-                    float priority = newCost + GetCellHeuristic(neighbor, goalCell);
+                    float priority = newCost + GetCellHeuristic(neighbor, goalCell) + GetICostFromCell(neighbor);
                     frontier.Enqueue(neighbor, priority);
                     cameFrom[neighbor] = current;
                 }
@@ -342,7 +342,7 @@ public class Agent: MonoBehaviour{
                 if (!tcostSoFar.ContainsKey(neighbor) || newCost < tcostSoFar[neighbor])
                 {
                     tcostSoFar[neighbor] = newCost;
-                    float priority = newCost + GetThresholdHeuristic(neighbor, goalThreshold);
+                    float priority = newCost + GetThresholdHeuristic(neighbor, goalThreshold) + GetICostFromThreshold(neighbor);
                     frontier.Enqueue(neighbor, priority);
                     tcameFrom[neighbor] = current;
                 }
@@ -370,6 +370,30 @@ public class Agent: MonoBehaviour{
         path.Add(startThreshold);
         path.Reverse();
         return path;
+    }
+
+
+    /* Get the Influence Cost from the given cell.
+     * Input: Cell in question
+     * Output: influence cost of that cell
+     */
+    private float GetICostFromCell(Cell cell)
+    {
+        float cost = cell.iCost;
+        //Debug.Log("this is cell:" + cost);
+        return cost;
+    }
+
+
+    /* Get the Influence Cost from the given threshold.
+     * Input: Threshold in question
+     * Output: influence cost of that threshold
+     */
+    private float GetICostFromThreshold(Threshold threshold)
+    {
+        float cost = threshold.iCost;
+        //Debug.Log("this is threshold:" + cost);
+        return cost;
     }
 
 
