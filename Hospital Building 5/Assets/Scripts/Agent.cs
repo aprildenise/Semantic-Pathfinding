@@ -213,7 +213,7 @@ public class Agent: MonoBehaviour{
         float cost = Mathf.Infinity;
         int i = 0;
         foreach (Threshold t in zone.thresholds){
-            float temp = GetCellCost(goalCell, t) + GetCellCost(currentCell, t);
+            float temp = GetCellCost(goalCell, t) + GetCellCost(currentCell, t) + GetICostFromThreshold(t);
             if (temp <= cost){
                 
                 cost = temp;
