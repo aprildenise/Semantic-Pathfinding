@@ -1,12 +1,8 @@
 # Semantic-Pathfinding
 Semantic Pathfinding
 
-Note: I am only going to push my code to the git, since the entire Unity Project is too big. For now, I will put notes on how to set up the code in Unity (ie. which references/objects go in the inspector) in here.
+Links to useful things:
 
-AbstractMaze.c 
-In Unity: 
-- Create an empty gameobject with the script component Abstract Maze
-- Add the following references in the component:
-    - BottomRight: Object_182
-    - TopRight: Object_444
-    - TopLeft: Object_480
+Documentation: https://drive.google.com/open?id=1c4qPf2ri7-ZX8huek9h4DqmwpPhuBIML
+Scripts: https://www.dropbox.com/sh/uk71lf1p6e7bfb3/AADUjUdFFrFgYSpQSjWL2zsma?dl=0
+Unity Project: https://www.dropbox.com/s/b1pq8ag0k7507iu/Hospital%20Building.zip?dl=0
