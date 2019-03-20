@@ -26,8 +26,9 @@ public class ZoneManager : MonoBehaviour {
 
         foreach (GameObject z in zonesObjectsAlt)
         {
+
             float iCost = FindICost(z);
-            Zone zone = new Zone(num, z.GetComponent<Renderer>(), iCost);
+            Zone zone = new Zone(num, z.GetComponent<Renderer>(), z.GetComponent<Collider>(), iCost);
             zones.Add(zone);
             num++;
         }

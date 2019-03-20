@@ -4,25 +4,33 @@ using UnityEngine;
 
 public class Zone{
 
-
-    public int zoneId;
+    
+    //references
     public new Renderer renderer;
-    //public int width; //!!MAY NOT BE NEEDED!!
-    //public int height;
+    public Collider collider;
+
     public Vector3 topLeft; //the 4 corners of the zone
     public Vector3 topRight;
     public Vector3 bottomLeft;
     public Vector3 bottomRight;
 
+    //globals
+    [HideInInspector]
+    public int zoneId;
+    [HideInInspector]
     public List<Threshold> thresholds; //list of thresholds that belong to this zone
     public float iCost;
+    [HideInInspector]
+    public List<Cell> cellsInZone; //list of all the cells that belong to this zone
 
     //constructor
-    public Zone(int zoneId, Renderer renderer, float iCost)
+    public Zone(int zoneId, Renderer renderer, Collider collider, float iCost)
     {
         this.zoneId = zoneId;
         this.renderer = renderer;
+        this.collider = collider;
         this.iCost = iCost;
+        cellsInZone = new List<Cell>();
         FindZoneCorners();
     }
 
@@ -41,6 +49,25 @@ public class Zone{
         topRight = new Vector3(approxRight, approxY, approxTop);
         bottomLeft = new Vector3(approxLeft, approxY, approxBottom);
         bottomRight = new Vector3(approxRight, approxY, approxBottom);
+
+        if (topLeft == topRight)
+        {
+            //something wrong has happened
+            //!! will fix another time//
+            //try using collider bounds instead
+            approxLeft = collider.bounds.center.x - (collider.bounds.size.x / 2);
+            approxRight = collider.bounds.center.x + (collider.bounds.size.x / 2);
+            approxBottom = collider.bounds.center.z - (collider.bounds.size.z / 2);
+            approxTop = collider.bounds.center.z + (collider.bounds.size.z / 2);
+            approxY = collider.bounds.center.y;
+
+            topLeft = new Vector3(approxLeft, approxY, approxTop);
+            topRight = new Vector3(approxRight, approxY, approxTop);
+            bottomLeft = new Vector3(approxLeft, approxY, approxBottom);
+            bottomRight = new Vector3(approxRight, approxY, approxBottom);
+
+        }
+
         
     }
 
@@ -59,6 +86,7 @@ public class Zone{
         }
         
     }
+
 
 
 	

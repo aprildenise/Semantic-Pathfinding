@@ -32,7 +32,7 @@ public class Map : MonoBehaviour
 
 
     private void Awake(){
-        InitMap();
+        InitMap(); 
     }
 
     /* Initialize the map. This includes: 
@@ -40,12 +40,16 @@ public class Map : MonoBehaviour
      */
     public void InitMap()
     {
+        //building the cell grid and zones
         GetMapDimensions();
         BuildCellGrid(.25f);
         DefineZones();
+
+        //building the threshold graph 
         FindThresholds();
         AddThresholdsToZone();
         //CreateImage();
+        
     }
 
 
@@ -152,22 +156,26 @@ public class Map : MonoBehaviour
         foreach (Zone z in zones)
         {
 
-
             //convert the 4 corners of the zone to cells
             Cell topLeftCell = CellFromWorldPos(z.topLeft);
             Cell topRightCell = CellFromWorldPos(z.topRight);
             Cell bottomLeftCell = CellFromWorldPos(z.bottomLeft);
 
+
             //mark the cells between the above bounds as belonging to this zone
             //also add the influence cost of the zone into the cell
             int id = z.zoneId;
+
             float iCost = z.iCost;
             for (int i = topLeftCell.gridPositionZ; i < bottomLeftCell.gridPositionZ; i++)
             {
                 for (int j = topLeftCell.gridPositionX; j < topRightCell.gridPositionX; j++)
                 {
+
                     grid[i, j].zoneId = id;
                     grid[i, j].iCost = iCost;
+                    z.cellsInZone.Add(grid[i, j]);
+
                 }
             }
         }
@@ -177,7 +185,7 @@ public class Map : MonoBehaviour
 
     /* Within each zone, find the thresholds that connect two different zones together
      */
-    public void FindThresholds()
+    private void FindThresholds()
     {
 
         //table to see if we have visited a cell
@@ -217,7 +225,7 @@ public class Map : MonoBehaviour
      * Input: visited array for traversing, starting cell, list where thresholds will be places
      * Output: list of thresholds that were found
      */
-    public List<Threshold> FindThresholdSearch(bool[,] visited, Cell start, List<Threshold> thresholdsList)
+    private List<Threshold> FindThresholdSearch(bool[,] visited, Cell start, List<Threshold> thresholdsList)
     {
         Queue<Cell> s = new Queue<Cell>();
         s.Enqueue(start);
@@ -245,6 +253,10 @@ public class Map : MonoBehaviour
                 {
                     if (!c.threshold && !cell.threshold)
                     {
+                        //if(c.zoneId == 17 || cell.zoneId == 17)
+                        //{
+                        //    Debug.Log("17 appears here as well");
+                        //}
 
                         c.threshold = true;
                         Threshold t = new Threshold(cell.zoneId, c.zoneId, c.iCost, c.worldPosition, c.gridPositionX, c.gridPositionZ, c.cellSize);
@@ -273,12 +285,14 @@ public class Map : MonoBehaviour
      * Also assign thresholds to their respective zones
      * Input: threshold graph
      */
-    public void BuildThresholdGraph(List<Threshold> thresholdsList)
+    private void BuildThresholdGraph(List<Threshold> thresholdsList)
     {
         //look at all the thresholds in the list. 
         //If threshold A and B have zones in common, then connect them
         for (int i = 0; i < thresholdsList.Count; i++)
         {
+
+
 
             Threshold threshold = thresholdsList[i];
             List<ThresholdEdge> possibleNeighbors = new List<ThresholdEdge>();
@@ -295,6 +309,7 @@ public class Map : MonoBehaviour
                 int thresholdBID1 = thresholdsList[j].tzoneID; //threshold B's IDS
                 int thresholdBID2 = thresholdsList[j].zoneId;
 
+
                 //if they share any ids in common, then B becomes a neighbor of A (A->B)
                 if (thresholdAID1 == thresholdBID1 || thresholdAID1 == thresholdBID2 || thresholdAID2 == thresholdBID1 || thresholdAID2 == thresholdBID2)
                 {
@@ -304,7 +319,25 @@ public class Map : MonoBehaviour
                         continue;
                     }
 
-                    float weight = Vector3.Distance(thresholdsList[i].worldPosition, thresholdsList[j].worldPosition);
+                    //DEBUG
+                    //if (thresholdAID1 == 24 || thresholdAID2 == 24 || thresholdBID1 == 24 || thresholdBID2 == 24)
+                    //{
+
+                    //    if (thresholdAID1 == 25 || thresholdAID2 == 25 || thresholdBID1 == 25 || thresholdBID2 == 25)
+                    //    {
+                    //        Debug.Log("looking at zone 25 and 26. ZoneIDs are: ");
+                    //        Debug.Log(thresholdAID1);
+                    //        Debug.Log(thresholdAID2);
+                    //        Debug.Log(thresholdBID1);
+                    //        Debug.Log(thresholdBID2);
+                    //    }
+
+                    //}
+
+                    
+                    //CHANGED!! REMEMBER TO CHANGE BACK
+                    //float weight = Vector3.Distance(thresholdsList[i].worldPosition, thresholdsList[j].worldPosition);
+                    float weight = SearchForDistance(thresholdsList[i], thresholdsList[j]);
                     ThresholdEdge e = new ThresholdEdge(thresholdsList[i], thresholdsList[j], weight);
                     if (!possibleNeighbors.Contains(e))
                     {
@@ -323,9 +356,97 @@ public class Map : MonoBehaviour
     }
 
 
+
+    /* Find the shortest path between two thresholds using A*. 
+     * Returns the distance of that path. Note: code taken from the Agent class
+     * Input: Threshold t1 origin, Threshold t2 goal 
+     */
+    public float SearchForDistance(Threshold t1, Threshold t2)
+    {
+        float distance = Mathf.Infinity;
+        //find the cells that correspond to the thresholds
+        Cell startCell = CellFromThreshold(t1);
+        Cell goalCell = CellFromThreshold(t2);
+
+        //neded lists
+        PriorityQueue<Cell> frontier = new PriorityQueue<Cell>();
+        Dictionary<Cell,Cell> cameFrom = new Dictionary<Cell, Cell>();
+        Dictionary<Cell, float> costSoFar = new Dictionary<Cell, float>();
+        List<Cell> path = null;
+
+        //initalizations
+        frontier.Enqueue(startCell, 0);
+        cameFrom[startCell] = startCell;
+        costSoFar[startCell] = 0;
+
+        if (t1 == t2)
+        {
+            return 0f;
+        }
+
+        while (frontier.Count() > 0)
+        {
+
+
+            //else, continue to calculate the path.
+            Cell current = frontier.Deqeueue();
+
+            if (current.Equals(goalCell))
+            {
+                distance = costSoFar[current];
+                //Debug.Log("distance for this threshold: " + distance);
+                break;
+            }
+
+
+            foreach (Edge e in current.edgesToNeighbors)
+            {
+                Cell neighbor = e.incident;
+
+                float newCost = costSoFar[current] + GetCellCost(current, neighbor);
+                if (!costSoFar.ContainsKey(neighbor) || newCost < costSoFar[neighbor])
+                {
+                    costSoFar[neighbor] = newCost;
+                    float priority = newCost + GetCellHeuristic(neighbor, goalCell);
+                    frontier.Enqueue(neighbor, priority);
+                    cameFrom[neighbor] = current;
+                }
+            }
+        }
+
+        return distance;
+    }
+
+
+
+    /* Calculate the cost from one cell to the next. 
+     * This is the distance from the source cell to the sink cell
+     * Input: source cell, sink cell
+     * Output: cost
+     */
+    private float GetCellCost(Cell source, Cell sink)
+    {
+        float cost = Vector3.Distance(source.worldPosition, sink.worldPosition);
+        return cost;
+    }
+
+    /* Calculate the heuristic cost from one cell to the next. 
+     * This is the distance from the source cell to the sink cell
+     * Input: source cell, sink cell
+     * Output: cost
+     */
+    private float GetCellHeuristic(Cell source, Cell sink)
+    {
+        float h = Vector3.Distance(source.worldPosition, sink.worldPosition);
+        return h;
+    }
+
+
+
+
     /* Given the threshold list, assign to each zone the thresholds that belong to its zone
      */
-    public void AddThresholdsToZone()
+    private void AddThresholdsToZone()
     {
         List<Threshold> thresholdList = thresholdGraph;
         //iterate through the list to find the zones the thresholds belong to
@@ -382,8 +503,106 @@ public class Map : MonoBehaviour
             z = 0;
         }
 
-
+        //debug check
+        //if (!grid[z, x].isWalkable)
+        //{
+        //    Debug.Log("Warning! the Agent has picked an unwalkable cell");
+        //}
         return grid[z, x];
+    }
+
+
+    public Cell CellFromWorldPosSearch(Vector3 worldPos)
+    {
+        Cell c = null;
+        Vector3 position = worldPos;
+        int tries = 3;
+        bool validCell = false;
+        while (!validCell)
+        {
+            float xpos = position.x;
+            float zpos = position.z;
+
+            int z = 0;
+            int x = 0;
+
+            //search for the cell with the same z position.
+            int t = 0;
+            int b = grid.GetLength(0) - 1;
+            //round up the z component of the world position so it matches with the Vector3
+            float approximatedUp = zpos + cellSize;
+            float approximatedDown = zpos - cellSize;
+            while (t <= b)
+            {
+                int m = (int)Mathf.Floor((t + b) / 2);
+
+
+
+                if (grid[m, 0].worldPosition.z >= approximatedDown && grid[m, 0].worldPosition.z <= approximatedUp)
+                {
+                    z = m;
+                    break;
+                }
+
+                if (grid[m, 0].worldPosition.z > zpos)
+                {
+                    t = m + 1;
+                }
+                else
+                {
+                    b = m - 1;
+                }
+            }
+
+            //now, search for the cell with the same x position.
+            int l = 0;
+            int r = grid.GetLength(1) - 1;
+            //round up the z component of the world position so it matches with the Vector3
+            approximatedUp = xpos + cellSize;
+            approximatedDown = xpos - cellSize;
+            while (l <= r)
+            {
+                int m = (int)Mathf.Floor((l + r) / 2);
+
+
+                if (grid[z, m].worldPosition.x >= approximatedDown && grid[z, m].worldPosition.x <= approximatedUp)
+                {
+                    x = m;
+                    break;
+                }
+
+                if (grid[z, m].worldPosition.x < xpos)
+                {
+                    l = m + 1;
+                }
+
+                else
+                {
+                    r = m - 1;
+                }
+            }
+
+
+            c = grid[z, x];
+            if (c.isWalkable)
+            {
+                validCell = true;
+            }
+            else
+            {
+                position = grid[z, x].worldPosition;
+            }
+
+            tries--;
+            if (tries < 0)
+            {
+                break;
+            }
+        }
+
+        return c;
+
+
     }
 
 
@@ -483,33 +702,28 @@ public class Map : MonoBehaviour
                {
                    Cell c = grid[j, i];
 
-                    //uncomment to see thresholds and iswalkables
-                    //if (c.isWalkable && !c.threshold)
+                    //if (c.isWalkable && c.threshold)
                     //{
-                    //    Gizmos.color = UnityEngine.Color.clear;
+                    //    Gizmos.color = UnityEngine.Color.green;
+                    //    Vector3 increment = new Vector3(c.cellSize / 2f, 0, -1f * c.cellSize / 2f);
+                    //    Vector3 center = c.worldPosition + increment;
+                    //    Gizmos.DrawCube(center, new Vector3(c.cellSize, c.cellSize, c.cellSize));
                     //}
-                    if (c.isWalkable && c.threshold)
-                    {
-                        Gizmos.color = UnityEngine.Color.blue;
-                        Vector3 increment = new Vector3(c.cellSize / 2f, 0, -1f * c.cellSize / 2f);
-                        Vector3 center = c.worldPosition + increment;
-                        Gizmos.DrawCube(center, new Vector3(c.cellSize, c.cellSize, c.cellSize));
-                    }
-                    else if (!c.isWalkable)
-                    {
-                        Gizmos.color = UnityEngine.Color.red;
-                        Vector3 increment = new Vector3(c.cellSize / 2f, 0, -1f * c.cellSize / 2f);
-                        Vector3 center = c.worldPosition + increment;
-                        Gizmos.DrawCube(center, new Vector3(c.cellSize, c.cellSize, c.cellSize));
-                    }
+                    //if (!c.isWalkable)
+                    //{
+                    //    Gizmos.color = UnityEngine.Color.red;
+                    //    Vector3 increment = new Vector3(c.cellSize / 2f, 0, -1f * c.cellSize / 2f);
+                    //    Vector3 center = c.worldPosition + increment;
+                    //    Gizmos.DrawCube(center, new Vector3(c.cellSize, c.cellSize, c.cellSize));
+                    //}
 
-                    if (c.zoneId == -1)
-                    {
-                        //Gizmos.color = UnityEngine.Color.yellow;
-                        //Vector3 increment = new Vector3(c.cellSize / 2f, 0, -1f * c.cellSize / 2f);
-                        //Vector3 center = c.worldPosition + increment;
-                        //Gizmos.DrawCube(center, new Vector3(c.cellSize, c.cellSize, c.cellSize));
-                    }
+                    //else if (c.zoneId == 0)
+                    //{
+                    //    Gizmos.color = UnityEngine.Color.yellow;
+                    //    Vector3 increment = new Vector3(c.cellSize / 2f, 0, -1f * c.cellSize / 2f);
+                    //    Vector3 center = c.worldPosition + increment;
+                    //    Gizmos.DrawCube(center, new Vector3(c.cellSize, c.cellSize, c.cellSize));
+                    //}
 
                 }
             }

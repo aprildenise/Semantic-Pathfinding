@@ -9,6 +9,8 @@ public class Threshold : Cell{
     public List<ThresholdEdge> tedgesToNeighbors;
     //public Threshold tparent; //temporary
 
+    public string belongsTo;
+
     public new float iCost;
 
     //Constructor 
@@ -18,6 +20,7 @@ public class Threshold : Cell{
         this.tzoneID = tzoneID;
         this.zoneId = czoneID;
         this.isWalkable = true;
+        this.belongsTo = null;
     }
 
 

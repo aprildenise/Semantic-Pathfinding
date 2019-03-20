@@ -9,9 +9,8 @@ public class ThresholdEdge
     public Threshold origin;
     public Threshold incident;
 
-    //optional for now
-    public bool isActive;
-    public float weight;
+    public bool isActive; //optional for now
+    public float weight; //change to distance later
 
 
     //constructor
